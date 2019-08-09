@@ -58,10 +58,10 @@ E.g.:
     sudo sh -c "echo 'stratopi' >> /etc/modules"
     sudo sh -c "echo 'options stratopi model=ups' > /etc/modprobe.d/stratopi.conf"
 
-Optionally, to be able to use the `/sys/` files not as super user, create a new group "stratopi" and set it as the module owner group by creating an udev rule:
+Optionally, to be able to use the `/sys/` files not as super user, create a new group "stratopi" and set it as the module owner group by adding an udev rule:
 
     sudo groupadd stratopi
-    sudo sh -c "echo 'SUBSYSTEM==\"stratopi\", PROGRAM=\"/bin/sh -c '\''find -L /sys/class/stratopi/ -maxdepth 2 -exec chown root:stratopi {} \; -exec chmod 770 {} \; || true'\''\"' > /etc/udev/rules.d/99-stratopi.rules"
+    sudo cp 99-stratopi.rules /etc/udev/rules.d/
 
 and add your user to the group, e.g., for user "pi":
 
