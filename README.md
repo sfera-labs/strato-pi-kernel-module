@@ -79,7 +79,7 @@ After loading the module, you will find all the available devices under the dire
 The following paragraphs list all the possible devices (directories) and files coresponding to Strato's features. 
 Depending on the model you will find the available ones.
 
-You can read and/or write to these file to use your Strato Pi.
+You can read and/or write to these files to configure, monitor and control your Strato Pi.
 
 ### Buzzer - `/sys/class/stratopi/buzzer/`
 
