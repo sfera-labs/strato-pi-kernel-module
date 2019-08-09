@@ -1,0 +1,1 @@
+SUBSYSTEM=="stratopi", PROGRAM="/bin/sh -c 'find -L /sys/class/stratopi/ -maxdepth 2 -exec chown root:stratopi {} \; -exec chmod 770 {} \; || true'"
