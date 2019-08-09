@@ -66,7 +66,11 @@ Optionally, to be able to use the `/sys/` files not as super user, create a new 
 and add your user to the group, e.g., for user "pi":
 
     sudo usermod -a -G stratopi pi
-    
+
+then reload the module:
+
+    sudo rmmod stratopi.ko
+    sudo insmod stratopi.ko model=<xxx>
 
 ## Usage
 
