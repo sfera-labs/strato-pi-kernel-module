@@ -97,7 +97,8 @@ static struct device_attribute devAttrI2CExpFeedback;
 
 static struct device_attribute devAttrSdSdxEnabled;
 static struct device_attribute devAttrSdSd1Enabled;
-static struct device_attribute devAttrSdSdaBus;
+static struct device_attribute devAttrSdSdxRouting;
+static struct device_attribute devAttrSdSdxBoot;
 
 static struct device_attribute devAttrMcuConfig;
 static struct device_attribute devAttrMcuFwVersion;
@@ -208,17 +209,22 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 		if (attr == &devAttrSdSdxEnabled) {
 			cmd[1] = 'S';
 			cmd[2] = 'D';
-			cmd[3] = 'X';
+			cmd[3] = '0';
 			return 5;
 		} else if (attr == &devAttrSdSd1Enabled) {
 			cmd[1] = 'S';
 			cmd[2] = 'D';
 			cmd[3] = '1';
 			return 5;
-		} else if (attr == &devAttrSdSdaBus) {
+		} else if (attr == &devAttrSdSdxRouting) {
 			cmd[1] = 'S';
 			cmd[2] = 'D';
-			cmd[3] = 'A';
+			cmd[3] = 'R';
+			return 5;
+		} else if (attr == &devAttrSdSdxBoot) {
+			cmd[1] = 'S';
+			cmd[2] = 'D';
+			cmd[3] = 'P';
 			return 5;
 		}
 	} else if (dev == pMcuDevice) {
@@ -617,9 +623,18 @@ static struct device_attribute devAttrSdSd1Enabled = { //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrSdSdaBus = { //
+static struct device_attribute devAttrSdSdxRouting = { //
 		.attr = { //
-				.name = "sda_bus", //
+				.name = "sdx_routing", //
+						.mode = 0660, //
+				},//
+				.show = MCU_show, //
+				.store = MCU_store, //
+		};
+
+static struct device_attribute devAttrSdSdxBoot = { //
+		.attr = { //
+				.name = "sdx_boot", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
@@ -679,7 +694,8 @@ static void cleanup(void) {
 	if (pSdDevice && !IS_ERR(pSdDevice)) {
 		device_remove_file(pSdDevice, &devAttrSdSdxEnabled);
 		device_remove_file(pSdDevice, &devAttrSdSd1Enabled);
-		device_remove_file(pSdDevice, &devAttrSdSdaBus);
+		device_remove_file(pSdDevice, &devAttrSdSdxRouting);
+		device_remove_file(pSdDevice, &devAttrSdSdxBoot);
 
 		device_destroy(pDeviceClass, 0);
 	}
@@ -935,7 +951,8 @@ static int __init stratopi_init(void) {
 	if (pSdDevice) {
 		result |= device_create_file(pSdDevice, &devAttrSdSdxEnabled);
 		result |= device_create_file(pSdDevice, &devAttrSdSd1Enabled);
-		result |= device_create_file(pSdDevice, &devAttrSdSdaBus);
+		result |= device_create_file(pSdDevice, &devAttrSdSdxRouting);
+		result |= device_create_file(pSdDevice, &devAttrSdSdxBoot);
 	}
 
 	if (pMcuDevice) {
