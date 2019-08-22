@@ -21,15 +21,22 @@
 
 #include "soft_uart/raspberry_soft_uart.h"
 
+#define MODEL_BASE		101
+#define MODEL_UPS		102
+#define MODEL_CAN		103
+#define MODEL_CM		104
+#define MODEL_CMDUO		105
+
 #define SOFT_UART_RX_BUFF_SIZE 	16
-#define SOFT_UART_RX_TIMEOUT 	2000
+#define SOFT_UART_RX_TIMEOUT 	300
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
 MODULE_VERSION("1.0");
 
-static char *model = "ups";
+static int modelNum;
+static char *model = "";
 module_param( model, charp, S_IRUGO);
 MODULE_PARM_DESC(model, " Strato Pi model - 'base', 'ups', 'can', 'cm', or 'cmduo'");
 
@@ -235,7 +242,7 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 		} else if (attr == &devAttrMcuFwVersion) {
 			cmd[1] = 'F';
 			cmd[2] = 'W';
-			return 6;
+			return 10;
 		}
 	}
 	return -1;
@@ -286,7 +293,7 @@ static ssize_t GPIOBlink_store(struct device* dev,
 	if (rep < 1) {
 		rep = 1;
 	}
-	printk(KERN_INFO "Strato Pi: gpio blink %ld %ld %ld\n", on, off, rep);
+	printk(KERN_INFO "stratopi: gpio blink %ld %ld %ld\n", on, off, rep);
 	if (on > 0) {
 		for (i = 0; i < rep; i++) {
 			gpio_set_value(gpio, 1);
@@ -310,14 +317,14 @@ static bool softUartSendAndWait(const char *cmd, int cmdLen, int respLen) {
 	int waitTime = 0;
 	raspberry_soft_uart_open(NULL);
 	softUartRxBuffIdx = 0;
-	printk(KERN_INFO "Strato Pi: sending cmd  %s\n", cmd);
+	printk(KERN_INFO "stratopi: soft uart >>> %s\n", cmd);
 	raspberry_soft_uart_send_string(cmd, cmdLen);
 	while (softUartRxBuffIdx < respLen && waitTime < SOFT_UART_RX_TIMEOUT) {
-		msleep(100);
-		waitTime += 100;
+		msleep(20);
+		waitTime += 20;
 	}
 	softUartRxBuff[softUartRxBuffIdx] = '\0';
-	printk(KERN_INFO "Strato Pi: cmd response %s\n", softUartRxBuff);
+	printk(KERN_INFO "stratopi: soft uart <<< %s\n", softUartRxBuff);
 	raspberry_soft_uart_close();
 	return softUartRxBuffIdx == respLen;
 }
@@ -327,18 +334,20 @@ static ssize_t MCU_show(struct device* dev, struct device_attribute* attr,
 	long val;
 	char cmd[] = "XXX??";
 	int cmdLen = 4;
+	int prefixLen = 3;
 	int respLen = getMcuCmd(dev, attr, cmd);
 	if (respLen < 0) {
 		return -EINVAL;
 	}
 	if (respLen == 5) {
 		cmdLen = 5;
+		prefixLen = 4;
 	}
 	if (!softUartSendAndWait(cmd, cmdLen, respLen)) {
 		return -EIO;
 	}
-	if (kstrtol((const char *) (softUartRxBuff + 3), 10, &val) < 0) {
-		return sprintf(buf, "%s\n", softUartRxBuff + 3);
+	if (kstrtol((const char *) (softUartRxBuff + prefixLen), 10, &val) < 0) {
+		return sprintf(buf, "%s\n", softUartRxBuff + prefixLen);
 	}
 	return sprintf(buf, "%ld\n", val);
 }
@@ -781,19 +790,13 @@ static void cleanup(void) {
 
 	if (softUartInitialized) {
 		if (!raspberry_soft_uart_finalize()) {
-			printk(KERN_ALERT "Strato Pi: error finalizing soft UART\n");;
+			printk(KERN_ALERT "stratopi: error finalizing soft UART\n");;
 		}
 	}
 }
 
-static int __init stratopi_init(void) {
-	int result;
-	result = 0;
-	softUartInitialized = false;
-
-	printk(KERN_INFO "Strato Pi: init model=%s\n", model);
-
-	if (strcmp("cm", model) == 0) {
+static void setGPIO(void) {
+	if (modelNum == MODEL_CM) {
 		GPIO_WATCHDOG_ENABLE = 22;
 		GPIO_WATCHDOG_HEARTBEAT = 27;
 		GPIO_WATCHDOG_EXPIRED = 17;
@@ -802,7 +805,7 @@ static int __init stratopi_init(void) {
 		GPIO_BUTTON = 25;
 		GPIO_SOFTSERIAL_TX = 23;
 		GPIO_SOFTSERIAL_RX = 24;
-	} else if (strcmp("cmduo", model) == 0) {
+	} else if (modelNum == MODEL_CMDUO) {
 		GPIO_WATCHDOG_ENABLE = 39;
 		GPIO_WATCHDOG_HEARTBEAT = 32;
 		GPIO_WATCHDOG_EXPIRED = 17;
@@ -824,30 +827,112 @@ static int __init stratopi_init(void) {
 		GPIO_SOFTSERIAL_TX = 13;
 		GPIO_SOFTSERIAL_RX = 19;
 	}
+}
 
-	pDeviceClass = class_create(THIS_MODULE, "stratopi");
-	if (IS_ERR(pDeviceClass)) {
-		printk(KERN_ALERT "Strato Pi: failed to create device class\n");
+static bool softUartInit(void) {
+	if (!raspberry_soft_uart_init(GPIO_SOFTSERIAL_TX, GPIO_SOFTSERIAL_RX)) {
+		return false;
+	}
+	if (!raspberry_soft_uart_set_baudrate(1200)) {
+		raspberry_soft_uart_finalize();
+		return false;
+	}
+	return true;
+}
+
+static bool detectModelNumber(void) {
+	if (!softUartSendAndWait("XFW?", 4, 10)) {
+		return false;
+	}
+	return (kstrtoint((const char *) (softUartRxBuff + 7), 10, &modelNum) == 0);
+}
+
+static bool tryDetectModelNumberAs(int modelTry) {
+	modelNum = modelTry;
+	setGPIO();
+	if (!softUartInit()) {
+		return false;
+	}
+	if (!detectModelNumber()) {
+		raspberry_soft_uart_finalize();
+		return false;
+	}
+	return true;
+}
+
+static int __init stratopi_init(void) {
+	int result = 0;
+	softUartInitialized = false;
+
+	printk(KERN_INFO "stratopi: init\n");
+
+	if (!raspberry_soft_uart_set_rx_callback(&softUartRxCallback)) {
+		printk(KERN_ALERT "stratopi: error setting soft UART callback\n");
 		result = -1;
 		goto fail;
 	}
 
-	if (strcmp("cm", model) == 0 || strcmp("cmduo", model) == 0) {
+	if (strcmp("base", model) == 0) {
+		modelNum = MODEL_BASE;
+	} else if (strcmp("ups", model) == 0) {
+		modelNum = MODEL_UPS;
+	} else if (strcmp("can", model) == 0) {
+		modelNum = MODEL_CAN;
+	} else if (strcmp("cm", model) == 0) {
+		modelNum = MODEL_CM;
+	} else if (strcmp("cmduo", model) == 0) {
+		modelNum = MODEL_CMDUO;
+	} else {
+		modelNum = -1;
+	}
+
+	if (modelNum > 0) {
+		setGPIO();
+		if (!softUartInit()) {
+			printk(KERN_ALERT "stratopi: error initializing soft UART\n");
+			result = -1;
+			goto fail;
+		}
+	} else {
+		printk(KERN_INFO "stratopi: detecting model\n");
+		if (!tryDetectModelNumberAs(MODEL_CMDUO)) {
+			if (!tryDetectModelNumberAs(MODEL_CM)) {
+				if (!tryDetectModelNumberAs(MODEL_BASE)) {
+					printk(KERN_ALERT "stratopi: error detecting model\n");
+					result = -1;
+					goto fail;
+				}
+			}
+		}
+	}
+
+	printk(KERN_INFO "stratopi: model=%d\n", modelNum);
+
+	softUartInitialized = true;
+
+	pDeviceClass = class_create(THIS_MODULE, "stratopi");
+	if (IS_ERR(pDeviceClass)) {
+		printk(KERN_ALERT "stratopi: failed to create device class\n");
+		result = -1;
+		goto fail;
+	}
+
+	if (modelNum == MODEL_CM || modelNum == MODEL_CMDUO) {
 		pLedDevice = device_create(pDeviceClass, NULL, 0, NULL, "led");
 		pButtonDevice = device_create(pDeviceClass, NULL, 0, NULL, "button");
 
 		if (IS_ERR(pLedDevice) || IS_ERR(pButtonDevice)) {
-			printk(KERN_ALERT "Strato Pi: failed to create devices\n");
+			printk(KERN_ALERT "stratopi: failed to create devices\n");
 			result = -1;
 			goto fail;
 		}
 
-		if (strcmp("cmduo", model) == 0) {
+		if (modelNum == MODEL_CMDUO) {
 			pI2CExpDevice = device_create(pDeviceClass, NULL, 0, NULL, "i2cexp");
 			pSdDevice = device_create(pDeviceClass, NULL, 0, NULL, "sd");
 
 			if (IS_ERR(pI2CExpDevice) || IS_ERR(pSdDevice)) {
-				printk(KERN_ALERT "Strato Pi: failed to create devices\n");
+				printk(KERN_ALERT "stratopi: failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
@@ -856,25 +941,25 @@ static int __init stratopi_init(void) {
 		pBuzzerDevice = device_create(pDeviceClass, NULL, 0, NULL, "buzzer");
 
 		if (IS_ERR(pBuzzerDevice)) {
-			printk(KERN_ALERT "Strato Pi: failed to create devices\n");
+			printk(KERN_ALERT "stratopi: failed to create devices\n");
 			result = -1;
 			goto fail;
 		}
 
-		if (strcmp("can", model) == 0) {
+		if (modelNum == MODEL_CAN) {
 			pRelayDevice = device_create(pDeviceClass, NULL, 0, NULL, "relay");
 
 			if (IS_ERR(pRelayDevice)) {
-				printk(KERN_ALERT "Strato Pi: failed to create devices\n");
+				printk(KERN_ALERT "stratopi: failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
 
-		} else if (strcmp("ups", model) == 0) {
+		} else if (modelNum == MODEL_UPS) {
 			pUpsDevice = device_create(pDeviceClass, NULL, 0, NULL, "ups");
 
 			if (IS_ERR(pUpsDevice)) {
-				printk(KERN_ALERT "Strato Pi: failed to create devices\n");
+				printk(KERN_ALERT "stratopi: failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
@@ -887,7 +972,7 @@ static int __init stratopi_init(void) {
 	pMcuDevice = device_create(pDeviceClass, NULL, 0, NULL, "mcu");
 
 	if (IS_ERR(pRs485Device) || IS_ERR(pWatchdogDevice) || IS_ERR(pShutdownDevice) || IS_ERR(pMcuDevice)) {
-		printk(KERN_ALERT "Strato Pi: failed to create devices\n");
+		printk(KERN_ALERT "stratopi: failed to create devices\n");
 		result = -1;
 		goto fail;
 	}
@@ -961,7 +1046,7 @@ static int __init stratopi_init(void) {
 	}
 
 	if (result) {
-		printk(KERN_ALERT "Strato Pi: failed to create device files\n");
+		printk(KERN_ALERT "stratopi: failed to create device files\n");
 		result = -1;
 		goto fail;
 	}
@@ -969,93 +1054,76 @@ static int __init stratopi_init(void) {
 	if (pBuzzerDevice) {
 		gpio_request(GPIO_BUZZER, "stratopi_buzzer");
 		result |= gpio_direction_output(GPIO_BUZZER, false);
-		result |= gpio_export(GPIO_BUZZER, false);
+		gpio_export(GPIO_BUZZER, false);
 	}
 
 	gpio_request(GPIO_WATCHDOG_ENABLE, "stratopi_watchdog_enable");
 	result |= gpio_direction_output(GPIO_WATCHDOG_ENABLE, false);
-	result |= gpio_export(GPIO_WATCHDOG_ENABLE, false);
+	gpio_export(GPIO_WATCHDOG_ENABLE, false);
 
 	gpio_request(GPIO_WATCHDOG_HEARTBEAT, "stratopi_watchdog_heartbeat");
 	result |= gpio_direction_output(GPIO_WATCHDOG_HEARTBEAT, false);
-	result |= gpio_export(GPIO_WATCHDOG_HEARTBEAT, false);
+	gpio_export(GPIO_WATCHDOG_HEARTBEAT, false);
 
 	gpio_request(GPIO_WATCHDOG_EXPIRED, "stratopi_watchdog_expired");
 	result |= gpio_direction_input(GPIO_WATCHDOG_EXPIRED);
-	result |= gpio_export(GPIO_WATCHDOG_EXPIRED, false);
+	gpio_export(GPIO_WATCHDOG_EXPIRED, false);
 
 	gpio_request(GPIO_SHUTDOWN, "stratopi_shutdown");
 	result |= gpio_direction_output(GPIO_SHUTDOWN, false);
-	result |= gpio_export(GPIO_SHUTDOWN, false);
+	gpio_export(GPIO_SHUTDOWN, false);
 
 	if (pUpsDevice) {
 		gpio_request(GPIO_UPS_BATTERY, "stratopi_battery");
 		result |= gpio_direction_input(GPIO_UPS_BATTERY);
-		result |= gpio_export(GPIO_UPS_BATTERY, false);
+		gpio_export(GPIO_UPS_BATTERY, false);
 	}
 
 	if (pRelayDevice) {
 		gpio_request(GPIO_RELAY, "stratopi_relay");
 		result |= gpio_direction_output(GPIO_RELAY, false);
-		result |= gpio_export(GPIO_RELAY, false);
+		gpio_export(GPIO_RELAY, false);
 	}
 
 	if (pLedDevice) {
 		gpio_request(GPIO_LED, "stratopi_led");
 		result |= gpio_direction_output(GPIO_LED, false);
-		result |= gpio_export(GPIO_LED, false);
+		gpio_export(GPIO_LED, false);
 	}
 
 	if (pButtonDevice) {
 		gpio_request(GPIO_BUTTON, "stratopi_button");
 		result |= gpio_direction_input(GPIO_BUTTON);
-		result |= gpio_export(GPIO_BUTTON, false);
+		gpio_export(GPIO_BUTTON, false);
 	}
 
 	if (pI2CExpDevice) {
 		gpio_request(GPIO_I2CEXP_ENABLE, "stratopi_i2cexp_enable");
 		result |= gpio_direction_output(GPIO_I2CEXP_ENABLE, false);
-		result |= gpio_export(GPIO_I2CEXP_ENABLE, false);
+		gpio_export(GPIO_I2CEXP_ENABLE, false);
 
 		gpio_request(GPIO_I2CEXP_FEEDBACK, "stratopi_i2cexp_feedback");
 		result |= gpio_direction_input(GPIO_I2CEXP_FEEDBACK);
-		result |= gpio_export(GPIO_I2CEXP_FEEDBACK, false);
+		gpio_export(GPIO_I2CEXP_FEEDBACK, false);
 	}
 
 	if (result) {
-		printk(KERN_ALERT "Strato Pi: error setting up GPIOs\n");
+		printk(KERN_ALERT "stratopi: error setting up GPIOs\n");
 		goto fail;
 	}
 
-	if (!raspberry_soft_uart_init(GPIO_SOFTSERIAL_TX, GPIO_SOFTSERIAL_RX)) {
-		printk(KERN_ALERT "Strato Pi: error initializing soft UART\n");
-		goto fail;
-	}
-
-	if (!raspberry_soft_uart_set_baudrate(1200)) {
-		printk(KERN_ALERT "Strato Pi: error setting soft UART baudrate\n");
-		goto fail;
-	}
-
-	softUartInitialized = true;
-
-	if (!raspberry_soft_uart_set_rx_callback(&softUartRxCallback)) {
-		printk(KERN_ALERT "Strato Pi: error setting soft UART callback\n");
-		goto fail;
-	}
-
-	printk(KERN_INFO "Strato Pi: ready\n");
+	printk(KERN_INFO "stratopi: ready\n");
 	return 0;
 
 	fail:
-	printk(KERN_ALERT "Strato Pi: init failed\n");
+	printk(KERN_ALERT "stratopi: init failed\n");
 	cleanup();
 	return result;
 }
 
 static void __exit stratopi_exit(void) {
 	cleanup();
-	printk(KERN_INFO "Strato Pi: exit\n");
+	printk(KERN_INFO "stratopi: exit\n");
 }
 
 module_init( stratopi_init);
