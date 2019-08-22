@@ -67,8 +67,9 @@ and add your user to the group, e.g., for user "pi":
 
     sudo usermod -a -G stratopi pi
 
-then reload the module:
+then re-login to apply the group change and reload the module:
 
+    su - $USER
     sudo rmmod stratopi.ko
     sudo insmod stratopi.ko model=<xxx>
 
