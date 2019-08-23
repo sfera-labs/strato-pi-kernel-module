@@ -120,7 +120,8 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|down_enabled|R/W|0|Shutdown cycle enabled|
+|down_enabled|R/W|0|Delayed Shutdown cycle disabled|
+|down_enabled|R/W|1|Delayed Shutdown cycle enabled|
 |down_delay*|R/W|&lt;t&gt;|Shutdown delay from the moment it is enabled, in seconds (1 - 99999)|
 |off_time*|R/W|&lt;t&gt;|Duration of power-off, in seconds (1 - 99999)|
 |up_delay*|R/W|&lt;t&gt;|Power-up delay after main power is restored, in seconds (1 - 99999)|
