@@ -116,7 +116,7 @@ Examples:
 |sd_switch*|R/W|0|Switch boot from SDA/SDB every time the watchdog resets the Pi. Can be used with /enable_mode set to D or A|
 |sd_switch*|R/W|&lt;n&gt;|Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. Can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 0|
 
-### Shutdown - `/sys/class/stratopi/power/`
+### Power - `/sys/class/stratopi/power/`
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
@@ -128,6 +128,8 @@ Examples:
 |down_enable_mode*|R/W|A|Arm: enabling shutdown will arm the shutdown procedure, but will not start the power-cycle until the shutdown enable line goes low again (i.e. shutwown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will initiate the power-cycle|
 |up_mode*|R/W|A|Always: if shutdown is enabled when the main power is not present, only the Raspberry Pi is turned off, and the power is always restored after the power-off time, even if running on battery, with no main power present|
 |up_mode*|R/W|M|Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato Pi UPS board are powered down after the shutdown wait time, and powered up again only when the main power is restored|
+|sd_switch*|R/W|E|Switch boot from SDA/SDB at every power-cycle|
+|sd_switch*|R/W|D|SD switch at power-cycle disabled (factory default)|
 
 ### RS-485 Config - `/sys/class/stratopi/rs485/`
 
