@@ -53,19 +53,25 @@ int GPIO_I2CEXP_ENABLE;
 int GPIO_I2CEXP_FEEDBACK;
 int GPIO_SOFTSERIAL_TX;
 int GPIO_SOFTSERIAL_RX;
+int GPIO_USB1_DISABLE;
+int GPIO_USB1_FAULT;
+int GPIO_USB2_DISABLE;
+int GPIO_USB2_FAULT;
 
 static struct class *pDeviceClass;
 
 static struct device *pBuzzerDevice = NULL;
 static struct device *pWatchdogDevice = NULL;
 static struct device *pRs485Device = NULL;
-static struct device *pShutdownDevice = NULL;
+static struct device *pPowerDevice = NULL;
 static struct device *pUpsDevice = NULL;
 static struct device *pRelayDevice = NULL;
 static struct device *pLedDevice = NULL;
 static struct device *pButtonDevice = NULL;
-static struct device *pI2CExpDevice = NULL;
+static struct device *pExpBusDevice = NULL;
 static struct device *pSdDevice = NULL;
+static struct device *pUsb1Device = NULL;
+static struct device *pUsb2Device = NULL;
 static struct device *pMcuDevice = NULL;
 
 static struct device_attribute devAttrBuzzerStatus;
@@ -81,13 +87,13 @@ static struct device_attribute devAttrWatchdogSdSwitch;
 static struct device_attribute devAttrRs485Mode;
 static struct device_attribute devAttrRs485Params;
 
-static struct device_attribute devAttrShutdownEnabled;
-static struct device_attribute devAttrShutdownWait;
-static struct device_attribute devAttrShutdownEnableMode;
-static struct device_attribute devAttrShutdownDuration;
-static struct device_attribute devAttrShutdownUpDelay;
-static struct device_attribute devAttrShutdownUpMode;
-static struct device_attribute devAttrShutdownSdSwitch;
+static struct device_attribute devAttrPowerDownEnabled;
+static struct device_attribute devAttrPowerDownDelay;
+static struct device_attribute devAttrPowerDownEnableMode;
+static struct device_attribute devAttrPowerOffTime;
+static struct device_attribute devAttrPowerUpDelay;
+static struct device_attribute devAttrPowerUpMode;
+static struct device_attribute devAttrPowerSdSwitch;
 
 static struct device_attribute devAttrUpsBattery;
 static struct device_attribute devAttrUpsPowerOff;
@@ -99,13 +105,19 @@ static struct device_attribute devAttrLedBlink;
 
 static struct device_attribute devAttrButtonStatus;
 
-static struct device_attribute devAttrI2CExpEnabled;
-static struct device_attribute devAttrI2CExpFeedback;
+static struct device_attribute devAttrExpBusEnabled;
+static struct device_attribute devAttrExpBusFeedback;
 
 static struct device_attribute devAttrSdSdxEnabled;
 static struct device_attribute devAttrSdSd1Enabled;
 static struct device_attribute devAttrSdSdxRouting;
 static struct device_attribute devAttrSdSdxBoot;
+
+static struct device_attribute devAttrUsb1Disabled;
+static struct device_attribute devAttrUsb1Fault;
+
+static struct device_attribute devAttrUsb2Disabled;
+static struct device_attribute devAttrUsb2Fault;
 
 static struct device_attribute devAttrMcuConfig;
 static struct device_attribute devAttrMcuFwVersion;
@@ -132,7 +144,7 @@ static int getGPIO(struct device* dev, struct device_attribute* attr) {
 		} else if (attr == &devAttrWatchdogExpired) {
 			return GPIO_WATCHDOG_EXPIRED;
 		}
-	} else if (dev == pShutdownDevice) {
+	} else if (dev == pPowerDevice) {
 		return GPIO_SHUTDOWN;
 	} else if (dev == pUpsDevice) {
 		return GPIO_UPS_BATTERY;
@@ -142,11 +154,23 @@ static int getGPIO(struct device* dev, struct device_attribute* attr) {
 		return GPIO_LED;
 	} else if (dev == pButtonDevice) {
 		return GPIO_BUTTON;
-	} else if (dev == pI2CExpDevice) {
-		if (attr == &devAttrI2CExpEnabled) {
+	} else if (dev == pExpBusDevice) {
+		if (attr == &devAttrExpBusEnabled) {
 			return GPIO_I2CEXP_ENABLE;
-		} else if (attr == &devAttrI2CExpFeedback) {
+		} else if (attr == &devAttrExpBusFeedback) {
 			return GPIO_I2CEXP_FEEDBACK;
+		}
+	} else if (dev == pUsb1Device) {
+		if (attr == &devAttrUsb1Disabled) {
+			return GPIO_USB1_DISABLE;
+		} else if (attr == &devAttrUsb1Fault) {
+			return GPIO_USB1_FAULT;
+		}
+	} else if (dev == pUsb2Device) {
+		if (attr == &devAttrUsb2Disabled) {
+			return GPIO_USB2_DISABLE;
+		} else if (attr == &devAttrUsb2Fault) {
+			return GPIO_USB2_FAULT;
 		}
 	}
 	return -1;
@@ -164,28 +188,28 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 			cmd[2] = 'P';
 			return 7;
 		}
-	} else if (dev == pShutdownDevice) {
-		if (attr == &devAttrShutdownEnableMode) {
+	} else if (dev == pPowerDevice) {
+		if (attr == &devAttrPowerDownEnableMode) {
 			cmd[1] = 'P';
 			cmd[2] = 'E';
 			return 4;
-		} else if (attr == &devAttrShutdownWait) {
+		} else if (attr == &devAttrPowerDownDelay) {
 			cmd[1] = 'P';
 			cmd[2] = 'W';
 			return 8;
-		} else if (attr == &devAttrShutdownDuration) {
+		} else if (attr == &devAttrPowerOffTime) {
 			cmd[1] = 'P';
 			cmd[2] = 'O';
 			return 8;
-		} else if (attr == &devAttrShutdownUpDelay) {
+		} else if (attr == &devAttrPowerUpDelay) {
 			cmd[1] = 'P';
 			cmd[2] = 'U';
 			return 8;
-		} else if (attr == &devAttrShutdownUpMode) {
+		} else if (attr == &devAttrPowerUpMode) {
 			cmd[1] = 'P';
 			cmd[2] = 'P';
 			return 4;
-		} else if (attr == &devAttrShutdownSdSwitch) {
+		} else if (attr == &devAttrPowerSdSwitch) {
 			cmd[1] = 'P';
 			cmd[2] = 'S';
 			cmd[3] = 'D';
@@ -266,7 +290,11 @@ static ssize_t GPIO_store(struct device* dev, struct device_attribute* attr,
 		return -EINVAL;
 	}
 	if (kstrtobool(buf, &val) < 0) {
-		if (toUpper(buf[0]) == 'F' || toUpper(buf[0]) == 'T') {
+		if (toUpper(buf[0]) == 'E') { // Enable
+			val = true;
+		} else if (toUpper(buf[0]) == 'D') { // Disable
+			val = false;
+		} else if (toUpper(buf[0]) == 'F' || toUpper(buf[0]) == 'T') { // Flip/Toggle
 			val = gpio_get_value(gpio) == 1 ? false : true;
 		} else {
 			return -EINVAL;
@@ -479,52 +507,52 @@ static struct device_attribute devAttrRs485Params = { //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrShutdownEnabled = { //
+static struct device_attribute devAttrPowerDownEnabled = { //
 		.attr = { //
-				.name = "enabled", //
+				.name = "down_enabled", //
 						.mode = 0660, //
 				},//
 				.show = GPIO_show, //
 				.store = GPIO_store, //
 		};
 
-static struct device_attribute devAttrShutdownWait = { //
+static struct device_attribute devAttrPowerDownDelay = { //
 		.attr = { //
-				.name = "wait", //
+				.name = "down_delay", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrShutdownEnableMode = { //
+static struct device_attribute devAttrPowerDownEnableMode = { //
 		.attr = { //
-				.name = "enable_mode", //
+				.name = "down_enable_mode", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrShutdownDuration = { //
+static struct device_attribute devAttrPowerOffTime = { //
 		.attr = { //
-				.name = "duration", //
+				.name = "off_time", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrShutdownUpDelay = { //
+static struct device_attribute devAttrPowerUpDelay = { //
 		.attr = { //
-				.name = "delay", //
+				.name = "up_delay", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrShutdownUpMode = { //
+static struct device_attribute devAttrPowerUpMode = { //
 		.attr = { //
 				.name = "up_mode", //
 						.mode = 0660, //
@@ -533,7 +561,7 @@ static struct device_attribute devAttrShutdownUpMode = { //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrShutdownSdSwitch = { //
+static struct device_attribute devAttrPowerSdSwitch = { //
 		.attr = { //
 				.name = "sd_switch", //
 						.mode = 0660, //
@@ -596,7 +624,7 @@ static struct device_attribute devAttrButtonStatus = { //
 				.store = NULL, //
 		};
 
-static struct device_attribute devAttrI2CExpEnabled = { //
+static struct device_attribute devAttrExpBusEnabled = { //
 		.attr = { //
 				.name = "enabled", //
 						.mode = 0660, //
@@ -605,7 +633,7 @@ static struct device_attribute devAttrI2CExpEnabled = { //
 				.store = GPIO_store, //
 		};
 
-static struct device_attribute devAttrI2CExpFeedback = { //
+static struct device_attribute devAttrExpBusFeedback = { //
 		.attr = { //
 				.name = "feedback", //
 						.mode = 0440, //
@@ -650,6 +678,42 @@ static struct device_attribute devAttrSdSdxBoot = { //
 				.store = MCU_store, //
 		};
 
+static struct device_attribute devAttrUsb1Disabled = { //
+		.attr = { //
+				.name = "disabled", //
+						.mode = 0660, //
+				},//
+				.show = GPIO_show, //
+				.store = GPIO_store, //
+		};
+
+static struct device_attribute devAttrUsb1Fault = { //
+		.attr = { //
+				.name = "fault", //
+						.mode = 0440, //
+				},//
+				.show = GPIO_show, //
+				.store = NULL, //
+		};
+
+static struct device_attribute devAttrUsb2Disabled = { //
+		.attr = { //
+				.name = "disabled", //
+						.mode = 0660, //
+				},//
+				.show = GPIO_show, //
+				.store = GPIO_store, //
+		};
+
+static struct device_attribute devAttrUsb2Fault = { //
+		.attr = { //
+				.name = "fault", //
+						.mode = 0440, //
+				},//
+				.show = GPIO_show, //
+				.store = NULL, //
+		};
+
 static struct device_attribute devAttrMcuConfig = { //
 		.attr = { //
 				.name = "config", //
@@ -688,9 +752,9 @@ static void cleanup(void) {
 		gpio_free(GPIO_BUTTON);
 	}
 
-	if (pI2CExpDevice && !IS_ERR(pI2CExpDevice)) {
-		device_remove_file(pI2CExpDevice, &devAttrI2CExpEnabled);
-		device_remove_file(pI2CExpDevice, &devAttrI2CExpFeedback);
+	if (pExpBusDevice && !IS_ERR(pExpBusDevice)) {
+		device_remove_file(pExpBusDevice, &devAttrExpBusEnabled);
+		device_remove_file(pExpBusDevice, &devAttrExpBusFeedback);
 
 		device_destroy(pDeviceClass, 0);
 
@@ -707,6 +771,30 @@ static void cleanup(void) {
 		device_remove_file(pSdDevice, &devAttrSdSdxBoot);
 
 		device_destroy(pDeviceClass, 0);
+	}
+
+	if (pUsb1Device && !IS_ERR(pUsb1Device)) {
+		device_remove_file(pUsb1Device, &devAttrUsb1Disabled);
+		device_remove_file(pUsb1Device, &devAttrUsb1Fault);
+
+		device_destroy(pDeviceClass, 0);
+
+		gpio_unexport(GPIO_USB1_DISABLE);
+		gpio_free(GPIO_USB1_DISABLE);
+		gpio_unexport(GPIO_USB1_FAULT);
+		gpio_free(GPIO_USB1_FAULT);
+	}
+
+	if (pUsb2Device && !IS_ERR(pUsb2Device)) {
+		device_remove_file(pUsb2Device, &devAttrUsb2Disabled);
+		device_remove_file(pUsb2Device, &devAttrUsb2Fault);
+
+		device_destroy(pDeviceClass, 0);
+
+		gpio_unexport(GPIO_USB2_DISABLE);
+		gpio_free(GPIO_USB2_DISABLE);
+		gpio_unexport(GPIO_USB2_FAULT);
+		gpio_free(GPIO_USB2_FAULT);
 	}
 
 	if (pBuzzerDevice && !IS_ERR(pBuzzerDevice)) {
@@ -749,14 +837,14 @@ static void cleanup(void) {
 		device_destroy(pDeviceClass, 0);
 	}
 
-	if (pShutdownDevice && !IS_ERR(pShutdownDevice)) {
-		device_remove_file(pShutdownDevice, &devAttrShutdownEnabled);
-		device_remove_file(pShutdownDevice, &devAttrShutdownWait);
-		device_remove_file(pShutdownDevice, &devAttrShutdownEnableMode);
-		device_remove_file(pShutdownDevice, &devAttrShutdownDuration);
-		device_remove_file(pShutdownDevice, &devAttrShutdownUpDelay);
-		device_remove_file(pShutdownDevice, &devAttrShutdownUpMode);
-		device_remove_file(pShutdownDevice, &devAttrShutdownSdSwitch);
+	if (pPowerDevice && !IS_ERR(pPowerDevice)) {
+		device_remove_file(pPowerDevice, &devAttrPowerDownEnabled);
+		device_remove_file(pPowerDevice, &devAttrPowerDownDelay);
+		device_remove_file(pPowerDevice, &devAttrPowerDownEnableMode);
+		device_remove_file(pPowerDevice, &devAttrPowerOffTime);
+		device_remove_file(pPowerDevice, &devAttrPowerUpDelay);
+		device_remove_file(pPowerDevice, &devAttrPowerUpMode);
+		device_remove_file(pPowerDevice, &devAttrPowerSdSwitch);
 
 		device_destroy(pDeviceClass, 0);
 	}
@@ -812,10 +900,14 @@ static void setGPIO(void) {
 		GPIO_SHUTDOWN = 18;
 		GPIO_LED = 16;
 		GPIO_BUTTON = 38;
-		GPIO_SOFTSERIAL_TX = 37;
-		GPIO_SOFTSERIAL_RX = 33;
 		GPIO_I2CEXP_ENABLE = 6;
 		GPIO_I2CEXP_FEEDBACK = 34;
+		GPIO_USB1_DISABLE = 30;
+		GPIO_USB1_FAULT = 0;
+		GPIO_USB2_DISABLE = 31;
+		GPIO_USB2_FAULT = 1;
+		GPIO_SOFTSERIAL_TX = 37;
+		GPIO_SOFTSERIAL_RX = 33;
 	} else {
 		GPIO_BUZZER = 20;
 		GPIO_WATCHDOG_ENABLE = 6;
@@ -928,10 +1020,12 @@ static int __init stratopi_init(void) {
 		}
 
 		if (modelNum == MODEL_CMDUO) {
-			pI2CExpDevice = device_create(pDeviceClass, NULL, 0, NULL, "i2cexp");
+			pExpBusDevice = device_create(pDeviceClass, NULL, 0, NULL, "expbus");
 			pSdDevice = device_create(pDeviceClass, NULL, 0, NULL, "sd");
+			pUsb1Device = device_create(pDeviceClass, NULL, 0, NULL, "usb1");
+			pUsb2Device = device_create(pDeviceClass, NULL, 0, NULL, "usb2");
 
-			if (IS_ERR(pI2CExpDevice) || IS_ERR(pSdDevice)) {
+			if (IS_ERR(pExpBusDevice) || IS_ERR(pSdDevice) || IS_ERR(pUsb1Device) || IS_ERR(pUsb2Device)) {
 				printk(KERN_ALERT "stratopi: failed to create devices\n");
 				result = -1;
 				goto fail;
@@ -967,11 +1061,11 @@ static int __init stratopi_init(void) {
 	}
 
 	pWatchdogDevice = device_create(pDeviceClass, NULL, 0, NULL, "watchdog");
-	pShutdownDevice = device_create(pDeviceClass, NULL, 0, NULL, "shutdown");
+	pPowerDevice = device_create(pDeviceClass, NULL, 0, NULL, "power");
 	pRs485Device = device_create(pDeviceClass, NULL, 0, NULL, "rs485");
 	pMcuDevice = device_create(pDeviceClass, NULL, 0, NULL, "mcu");
 
-	if (IS_ERR(pRs485Device) || IS_ERR(pWatchdogDevice) || IS_ERR(pShutdownDevice) || IS_ERR(pMcuDevice)) {
+	if (IS_ERR(pRs485Device) || IS_ERR(pWatchdogDevice) || IS_ERR(pPowerDevice) || IS_ERR(pMcuDevice)) {
 		printk(KERN_ALERT "stratopi: failed to create devices\n");
 		result = -1;
 		goto fail;
@@ -998,15 +1092,17 @@ static int __init stratopi_init(void) {
 		result |= device_create_file(pRs485Device, &devAttrRs485Params);
 	}
 
-	if (pShutdownDevice) {
-		result |= device_create_file(pShutdownDevice, &devAttrShutdownEnabled);
-		result |= device_create_file(pShutdownDevice, &devAttrShutdownWait);
-		result |= device_create_file(pShutdownDevice, &devAttrShutdownEnableMode);
-		result |= device_create_file(pShutdownDevice, &devAttrShutdownDuration);
-		result |= device_create_file(pShutdownDevice, &devAttrShutdownUpDelay);
-		result |= device_create_file(pShutdownDevice, &devAttrShutdownUpMode);
+	if (pPowerDevice) {
+		result |= device_create_file(pPowerDevice, &devAttrPowerDownEnabled);
+		result |= device_create_file(pPowerDevice, &devAttrPowerDownDelay);
+		result |= device_create_file(pPowerDevice, &devAttrPowerDownEnableMode);
+		result |= device_create_file(pPowerDevice, &devAttrPowerOffTime);
+		result |= device_create_file(pPowerDevice, &devAttrPowerUpDelay);
+		if (pUpsDevice) {
+			result |= device_create_file(pPowerDevice, &devAttrPowerUpMode);
+		}
 		if (pSdDevice) {
-			result |= device_create_file(pShutdownDevice, &devAttrShutdownSdSwitch);
+			result |= device_create_file(pPowerDevice, &devAttrPowerSdSwitch);
 		}
 	}
 
@@ -1028,9 +1124,9 @@ static int __init stratopi_init(void) {
 		result |= device_create_file(pButtonDevice, &devAttrButtonStatus);
 	}
 
-	if (pI2CExpDevice) {
-		result |= device_create_file(pI2CExpDevice, &devAttrI2CExpEnabled);
-		result |= device_create_file(pI2CExpDevice, &devAttrI2CExpFeedback);
+	if (pExpBusDevice) {
+		result |= device_create_file(pExpBusDevice, &devAttrExpBusEnabled);
+		result |= device_create_file(pExpBusDevice, &devAttrExpBusFeedback);
 	}
 
 	if (pSdDevice) {
@@ -1038,6 +1134,16 @@ static int __init stratopi_init(void) {
 		result |= device_create_file(pSdDevice, &devAttrSdSd1Enabled);
 		result |= device_create_file(pSdDevice, &devAttrSdSdxRouting);
 		result |= device_create_file(pSdDevice, &devAttrSdSdxBoot);
+	}
+
+	if (pUsb1Device) {
+		result |= device_create_file(pUsb1Device, &devAttrUsb1Disabled);
+		result |= device_create_file(pUsb1Device, &devAttrUsb1Fault);
+	}
+
+	if (pUsb2Device) {
+		result |= device_create_file(pUsb2Device, &devAttrUsb2Disabled);
+		result |= device_create_file(pUsb2Device, &devAttrUsb2Fault);
 	}
 
 	if (pMcuDevice) {
@@ -1097,7 +1203,7 @@ static int __init stratopi_init(void) {
 		gpio_export(GPIO_BUTTON, false);
 	}
 
-	if (pI2CExpDevice) {
+	if (pExpBusDevice) {
 		gpio_request(GPIO_I2CEXP_ENABLE, "stratopi_i2cexp_enable");
 		result |= gpio_direction_output(GPIO_I2CEXP_ENABLE, false);
 		gpio_export(GPIO_I2CEXP_ENABLE, false);
@@ -1105,6 +1211,26 @@ static int __init stratopi_init(void) {
 		gpio_request(GPIO_I2CEXP_FEEDBACK, "stratopi_i2cexp_feedback");
 		result |= gpio_direction_input(GPIO_I2CEXP_FEEDBACK);
 		gpio_export(GPIO_I2CEXP_FEEDBACK, false);
+	}
+
+	if (pUsb1Device) {
+		gpio_request(GPIO_USB1_DISABLE, "stratopi_usb1_disable");
+		result |= gpio_direction_output(GPIO_USB1_DISABLE, false);
+		gpio_export(GPIO_USB1_DISABLE, false);
+
+		gpio_request(GPIO_USB1_FAULT, "stratopi_usb1_fault");
+		result |= gpio_direction_input(GPIO_USB1_FAULT);
+		gpio_export(GPIO_USB1_FAULT, false);
+	}
+
+	if (pUsb2Device) {
+		gpio_request(GPIO_USB2_DISABLE, "stratopi_usb2_disable");
+		result |= gpio_direction_output(GPIO_USB2_DISABLE, false);
+		gpio_export(GPIO_USB2_DISABLE, false);
+
+		gpio_request(GPIO_USB2_FAULT, "stratopi_usb2_fault");
+		result |= gpio_direction_input(GPIO_USB2_FAULT);
+		gpio_export(GPIO_USB2_FAULT, false);
 	}
 
 	if (result) {
