@@ -96,7 +96,7 @@ static struct device_attribute devAttrPowerUpMode;
 static struct device_attribute devAttrPowerSdSwitch;
 
 static struct device_attribute devAttrUpsBattery;
-static struct device_attribute devAttrUpsPowerOff;
+static struct device_attribute devAttrUpsPowerDelay;
 
 static struct device_attribute devAttrRelayStatus;
 
@@ -111,7 +111,7 @@ static struct device_attribute devAttrExpBusFeedback;
 static struct device_attribute devAttrSdSdxEnabled;
 static struct device_attribute devAttrSdSd1Enabled;
 static struct device_attribute devAttrSdSdxRouting;
-static struct device_attribute devAttrSdSdxBoot;
+static struct device_attribute devAttrSdSdxDefault;
 
 static struct device_attribute devAttrUsb1Disabled;
 static struct device_attribute devAttrUsb1Fault;
@@ -231,7 +231,7 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 			return 5;
 		}
 	} else if (dev == pUpsDevice) {
-		if (attr == &devAttrUpsPowerOff) {
+		if (attr == &devAttrUpsPowerDelay) {
 			cmd[1] = 'U';
 			cmd[2] = 'B';
 			return 8;
@@ -252,7 +252,7 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 			cmd[2] = 'D';
 			cmd[3] = 'R';
 			return 5;
-		} else if (attr == &devAttrSdSdxBoot) {
+		} else if (attr == &devAttrSdSdxDefault) {
 			cmd[1] = 'S';
 			cmd[2] = 'D';
 			cmd[3] = 'P';
@@ -579,9 +579,9 @@ static struct device_attribute devAttrUpsBattery = { //
 				.store = NULL, //
 		};
 
-static struct device_attribute devAttrUpsPowerOff = { //
+static struct device_attribute devAttrUpsPowerDelay = { //
 		.attr = { //
-				.name = "power_off", //
+				.name = "power_delay", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
@@ -669,9 +669,9 @@ static struct device_attribute devAttrSdSdxRouting = { //
 				.store = MCU_store, //
 		};
 
-static struct device_attribute devAttrSdSdxBoot = { //
+static struct device_attribute devAttrSdSdxDefault = { //
 		.attr = { //
-				.name = "sdx_boot", //
+				.name = "sdx_default", //
 						.mode = 0660, //
 				},//
 				.show = MCU_show, //
@@ -768,7 +768,7 @@ static void cleanup(void) {
 		device_remove_file(pSdDevice, &devAttrSdSdxEnabled);
 		device_remove_file(pSdDevice, &devAttrSdSd1Enabled);
 		device_remove_file(pSdDevice, &devAttrSdSdxRouting);
-		device_remove_file(pSdDevice, &devAttrSdSdxBoot);
+		device_remove_file(pSdDevice, &devAttrSdSdxDefault);
 
 		device_destroy(pDeviceClass, 0);
 	}
@@ -818,7 +818,7 @@ static void cleanup(void) {
 
 	if (pUpsDevice && !IS_ERR(pUpsDevice)) {
 		device_remove_file(pUpsDevice, &devAttrUpsBattery);
-		device_remove_file(pUpsDevice, &devAttrUpsPowerOff);
+		device_remove_file(pUpsDevice, &devAttrUpsPowerDelay);
 
 		device_destroy(pDeviceClass, 0);
 
@@ -1108,7 +1108,7 @@ static int __init stratopi_init(void) {
 
 	if (pUpsDevice) {
 		result |= device_create_file(pUpsDevice, &devAttrUpsBattery);
-		result |= device_create_file(pUpsDevice, &devAttrUpsPowerOff);
+		result |= device_create_file(pUpsDevice, &devAttrUpsPowerDelay);
 	}
 
 	if (pRelayDevice) {
@@ -1133,7 +1133,7 @@ static int __init stratopi_init(void) {
 		result |= device_create_file(pSdDevice, &devAttrSdSdxEnabled);
 		result |= device_create_file(pSdDevice, &devAttrSdSd1Enabled);
 		result |= device_create_file(pSdDevice, &devAttrSdSdxRouting);
-		result |= device_create_file(pSdDevice, &devAttrSdSdxBoot);
+		result |= device_create_file(pSdDevice, &devAttrSdSdxDefault);
 	}
 
 	if (pUsb1Device) {
