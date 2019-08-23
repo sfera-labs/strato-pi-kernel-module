@@ -9,6 +9,8 @@ For instance, check if the watchdog is enabled:
 Enable the watchdog:
 
     echo 1 > /sys/class/stratopi/watchdog/enabled
+    
+Requires Strato Pi with firmware version >= 4.0.
 
 ## Compile and Install
 
@@ -32,9 +34,7 @@ Make and install:
     
 Load the module:
 
-    sudo insmod stratopi.ko model=<xxx>
-    
-where `<xxx>` is one between `base`, `ups`, `can`, `cm`, or `cmduo`.
+    sudo insmod stratopi.ko
 
 Check that it was loaded correctly from the kernel log:
 
@@ -43,20 +43,16 @@ Check that it was loaded correctly from the kernel log:
 You will see something like:
 
     ...
-    Aug  9 14:24:12 raspberrypi kernel: [ 6022.987555] Strato Pi: init model=ups
-    Aug  9 14:24:12 raspberrypi kernel: [ 6022.989117] Strato Pi: ready
+    Aug  9 14:24:12 raspberrypi kernel: [ 6022.987555] stratopi: init
+    ...
+    Aug  9 14:24:12 raspberrypi kernel: [ 6022.989117] stratopi: ready
     ...
 
-Optionally, to have the module automatically loaded at boot add `stratopi` in `/etc/modules`, then cretate the file `/etc/modprobe.d/stratopi.conf` and add the line:
-
-    options stratopi model=<xxx>
-    
-specifying the correct model.
+Optionally, to have the module automatically loaded at boot add `stratopi` in `/etc/modules`.
 
 E.g.:
 
     sudo sh -c "echo 'stratopi' >> /etc/modules"
-    sudo sh -c "echo 'options stratopi model=ups' > /etc/modprobe.d/stratopi.conf"
 
 Optionally, to be able to use the `/sys/` files not as super user, create a new group "stratopi" and set it as the module owner group by adding an udev rule:
 
@@ -71,13 +67,13 @@ then re-login to apply the group change and reload the module:
 
     su - $USER
     sudo rmmod stratopi.ko
-    sudo insmod stratopi.ko model=<xxx>
+    sudo insmod stratopi.ko
 
 ## Usage
 
 After loading the module, you will find all the available devices under the directory `/sys/class/stratopi/`.
 
-The following paragraphs list all the possible devices (directories) and files coresponding to Strato's features. 
+The following paragraphs list all the possible devices (directories) and files coresponding to Strato Pi's features. 
 Depending on the model you will find the available ones.
 
 You can read and/or write to these files to configure, monitor and control your Strato Pi.
@@ -120,18 +116,18 @@ Examples:
 |sd_switch*|R/W|0|Switch boot from SDA/SDB every time the watchdog resets the Pi. Can be used with /enable_mode set to D or A|
 |sd_switch*|R/W|&lt;n&gt;|Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. Can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 0|
 
-### Shutdown - `/sys/class/stratopi/shutdown/`
+### Shutdown - `/sys/class/stratopi/power/`
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|enabled|R/W|0|Shutdown cycle enabled|
-|wait*|R/W|&lt;t&gt;|Shutdown wait time, in seconds (1 - 99999)|
-|duration*|R/W|&lt;t&gt;|Duration of power-off, in seconds (1 - 99999)|
-|delay*|R/W|&lt;t&gt;|Power-up delay after main power is restored, in seconds (1 - 99999)|
-|enable_mode*|R/W|I|Immediate (factory default): when shutdown is enabled, Strato Pi will immediately initiate the power off cycle, wait 60 seconds (configurable with /wait) and then power off the Pi board for at least 5 seconds (configurable with /duration)|
-|enable_mode*|R/W|A|Arm: enabling shutdown will arm the shutdown procedure, but will not start the power off cycle until the shutdown enable line goes low again (i.e. shutwown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will wait 60 seconds (configurable with /wait) and then power off the Pi board for at least 5 seconds (configurable with /duration)|
+|down_enabled|R/W|0|Shutdown cycle enabled|
+|down_delay*|R/W|&lt;t&gt;|Shutdown delay from the moment it is enabled, in seconds (1 - 99999)|
+|off_time*|R/W|&lt;t&gt;|Duration of power-off, in seconds (1 - 99999)|
+|up_delay*|R/W|&lt;t&gt;|Power-up delay after main power is restored, in seconds (1 - 99999)|
+|down_enable_mode*|R/W|I|Immediate (factory default): when shutdown is enabled, Strato Pi will immediately initiate the power-cycle, i.e. wait for the time specified in /down_delay and then power off the Pi board for the time specified in /off_time|
+|down_enable_mode*|R/W|A|Arm: enabling shutdown will arm the shutdown procedure, but will not start the power-cycle until the shutdown enable line goes low again (i.e. shutwown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will initiate the power-cycle|
 |up_mode*|R/W|A|Always: if shutdown is enabled when the main power is not present, only the Raspberry Pi is turned off, and the power is always restored after the power-off time, even if running on battery, with no main power present|
-|up_mode*|R/W|M|Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato UPS board are powered down after the shutdown wait time, and turned on again only when the main power is restored|
+|up_mode*|R/W|M|Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato Pi UPS board are powered down after the shutdown wait time, and powered up again only when the main power is restored|
 
 ### RS-485 Config - `/sys/class/stratopi/rs485/`
 
@@ -177,7 +173,7 @@ Examples:
 |----|:---:|:-:|-----------|
 |battery|R|0|Running on main power|
 |battery|R|1|Running on battery power|
-|power_off*|R/W|&lt;t&gt;|UPS automatic power-off timeout, in seconds. Strato Pi UPS will automatically initiate a delayed power-off cycle (just like when /shutdown/enabled is set to 1) if the main power source is not available for the number of seconds set (1 - 99999)|
+|power_delay*|R/W|&lt;t&gt;|UPS automatic power-cycle timeout, in seconds (0 - 99999). Strato Pi UPS will automatically initiate a delayed power-cycle (just like when /power/down_enabled is set to 1) if the main power source is not available for the number of seconds set. A value of 0 (factory default) disables the automatic power-cycle|
 
 ### Relay - `/sys/class/stratopi/relay/`
 
@@ -204,14 +200,14 @@ Examples:
 |status|R|0|Button released|
 |status|R|1|Button pressed|
 
-### I2C Expansion - `/sys/class/stratopi/i2cexp/`
+### Expansion Bus - `/sys/class/stratopi/expbus/`
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|enabled|R/W|0|I2C Expansion enabled|
-|enabled|R/W|1|I2C Expansion disabled|
-|feedback|R|0|I2C Expansion feedback not active|
-|feedback|R|1|I2C Expansion feedback active|
+|enabled|R/W|0|Expansion Bus enabled|
+|enabled|R/W|1|Expansion Bus disabled|
+|feedback|R|0|Expansion Bus feedback not active|
+|feedback|R|1|Expansion Bus feedback active|
 
 ### SD - `/sys/class/stratopi/sd/`
 
@@ -221,13 +217,33 @@ Examples:
 |sdx_enabled*|R/W|D|SDX bus disabled|
 |sd1_enabled*|R/W|E|SD1 bus enabled|
 |sd1_enabled*|R/W|D|SD1 bus disabled|
-|sda_bus*|R/W|X|SDA routed to SDX bus, SDB to SD1|
-|sda_bus*|R/W|1|SDA routed to SD1 bus, SDB to SDX|
+|sdx_default*|R/W|A|At power-up, SDX bus routed to SDA and SD1 bus to SDB by default|
+|sdx_default*|R/W|B|At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
+|sdx_routing*|R/W|A|SDX bus routed to SDA and SD1 bus to SDB|
+|sdx_routing*|R/W|B|SDX bus routed to SDB and SD1 bus to SDA|
+
+### USB 1 - `/sys/class/stratopi/usb1/`
+
+|File|R/W|Value|Description|
+|----|:---:|:-:|-----------|
+|enabled|R/W|0|USB 1 enabled|
+|enabled|R/W|1|USB 1 disabled|
+|fault|R|0|USB 1 ok|
+|fault|R|1|USB 1 fault|
+
+### USB 2 - `/sys/class/stratopi/usb2/`
+
+|File|R/W|Value|Description|
+|----|:---:|:-:|-----------|
+|enabled|R/W|0|USB 2 enabled|
+|enabled|R/W|1|USB 2 disabled|
+|fault|R|0|USB 2 ok|
+|fault|R|1|USB 2 fault|
 
 ### MCU - `/sys/class/stratopi/mcu/`
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|config|W|S|Permanently save the current configuration as the new factory default|
-|config|W|R|Permanently restore the original factory settings|
-|fw_version|R|&lt;m&gt;.&lt;n&gt;|read the firmware version, <m> is the major version number, <n> is the minor version number|
+|config|W|S|Persist the current configuration in the controller to be retained across power cycles|
+|config|W|R|Restore the original factory configuration|
+|fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/101"|
