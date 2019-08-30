@@ -10,7 +10,7 @@ Enable the watchdog:
 
     echo 1 > /sys/class/stratopi/watchdog/enabled
     
-Requires Strato Pi with firmware version >= 4.0.
+Requires Strato Pi with firmware version >= 3.5.
 
 ## Compile and Install
 
