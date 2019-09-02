@@ -210,8 +210,8 @@ Examples:
 |----|:---:|:-:|-----------|
 |enabled|R/W|0|Expansion Bus enabled|
 |enabled|R/W|1|Expansion Bus disabled|
-|feedback|R|0|Expansion Bus feedback not active|
-|feedback|R|1|Expansion Bus feedback active|
+|aux|R|0|Expansion Bus auxiliary line low|
+|aux|R|1|Expansion Bus auxiliary line high|
 
 ### SD - `/sys/class/stratopi/sd/`
 
