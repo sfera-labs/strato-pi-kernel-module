@@ -43,9 +43,9 @@ Check that it was loaded correctly from the kernel log:
 You will see something like:
 
     ...
-    Aug  9 14:24:12 raspberrypi kernel: [ 6022.987555] stratopi: init
+    Sep  3 11:49:18 raspberrypi kernel: [   59.855723] stratopi: - | init
     ...
-    Aug  9 14:24:12 raspberrypi kernel: [ 6022.989117] stratopi: ready
+    Sep  3 11:49:18 raspberrypi kernel: [   60.043024] stratopi: - | ready
     ...
 
 Optionally, to have the module automatically loaded at boot add `stratopi` in `/etc/modules`.
@@ -102,20 +102,20 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|enabled|R/W|0|Watchdog on|
-|enabled|R/W|1|Watchdog off|
+|enabled|R/W|0|Watchdog enabled|
+|enabled|R/W|1|Watchdog disabled|
 |enabled|W|F|Flip watchdog enabled state|
 |expired|R|0|Watchdog timeout not expired|
 |expired|R|1|Watchdog timeout expired|
-|heartbeat|W|0|Set watchdog heartbeat pin low|
-|heartbeat|W|1|Set watchdog heartbeat pin high|
+|heartbeat|W|0|Set watchdog heartbeat line low|
+|heartbeat|W|1|Set watchdog heartbeat line high|
 |heartbeat|W|F|Flip watchdog heartbeat state|
-|enable_mode*|R/W|D|Watchdog normally disabled (factory default)|
-|enable_mode*|R/W|A|Watchdog always enabled|
-|timeout*|R/W|&lt;t&gt;|Watchdog heartbeat timeout, in seconds (1 - 99999)|
-|sd_switch|R/W|0|Switch boot from SDA/SDB every time the watchdog resets the Pi. Can be used with /enable_mode set to D or A|
-|sd_switch|R/W|&lt;n&gt;|Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. Can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 0|
-|sd_switch|R/W|D|SD switch on watchdog reset disabled (factory default)|
+|enable_mode*|R/W|D|MCU config XWED - Watchdog normally disabled (factory default)|
+|enable_mode*|R/W|A|MCU config XWEA - Watchdog always enabled|
+|timeout*|R/W|&lt;t&gt;|MCU config XWH&lt;t&gt; - Watchdog heartbeat timeout, in seconds (1 - 99999). Factory default: 60|
+|sd_switch|R/W|0|MCU config XWSD0 - Switch boot from SDA/SDB every time the watchdog resets the Pi. Can be used with /enable_mode set to D or A|
+|sd_switch|R/W|&lt;n&gt;|MCU config XWSD&lt;n&gt; - Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. Can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 0|
+|sd_switch|R/W|D|MCU config XWSDD - SD switch on watchdog reset disabled (factory default)|
 
 ### Power - `/sys/class/stratopi/power/`
 
@@ -123,24 +123,24 @@ Examples:
 |----|:---:|:-:|-----------|
 |down_enabled|R/W|0|Delayed shutdown cycle disabled|
 |down_enabled|R/W|1|Delayed shutdown cycle enabled|
-|down_delay*|R/W|&lt;t&gt;|Shutdown delay from the moment it is enabled, in seconds (1 - 99999)|
-|off_time*|R/W|&lt;t&gt;|Duration of power-off, in seconds (1 - 99999)|
-|up_delay*|R/W|&lt;t&gt;|Power-up delay after main power is restored, in seconds (1 - 99999)|
-|down_enable_mode*|R/W|I|Immediate (factory default): when shutdown is enabled, Strato Pi will immediately initiate the power-cycle, i.e. wait for the time specified in /down_delay and then power off the Pi board for the time specified in /off_time|
-|down_enable_mode*|R/W|A|Arm: enabling shutdown will arm the shutdown procedure, but will not start the power-cycle until the shutdown enable line goes low again (i.e. shutwown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will initiate the power-cycle|
-|up_mode*|R/W|A|Always: if shutdown is enabled when the main power is not present, only the Raspberry Pi is turned off, and the power is always restored after the power-off time, even if running on battery, with no main power present|
-|up_mode*|R/W|M|Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato Pi UPS board are powered down after the shutdown wait time, and powered up again only when the main power is restored|
-|sd_switch|R/W|1|Switch boot from SDA/SDB at every power-cycle|
-|sd_switch|R/W|0|SD switch at power-cycle disabled (factory default)|
+|down_delay*|R/W|&lt;t&gt;|MCU config XPW&lt;t&gt; - Shutdown delay from the moment it is enabled, in seconds (1 - 99999). Factory default: 60|
+|off_time*|R/W|&lt;t&gt;|MCU config XPO&lt;t&gt; - Duration of power-off, in seconds (1 - 99999). Factory default: 5|
+|up_delay*|R/W|&lt;t&gt;|MCU config XPU&lt;t&gt; - Power-up delay after main power is restored, in seconds (0 - 99999). Factory default: 0|
+|down_enable_mode*|R/W|I|MCU config XPEI - Immediate (factory default): when shutdown is enabled, Strato Pi will immediately initiate the power-cycle, i.e. wait for the time specified in /down_delay and then power off the Pi board for the time specified in /off_time|
+|down_enable_mode*|R/W|A|MCU config XPEA - Arm: enabling shutdown will arm the shutdown procedure, but will not start the power-cycle until the shutdown enable line goes low again (i.e. shutdown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will initiate the power-cycle|
+|up_mode*|R/W|A|MCU config XPPA - Always: if shutdown is enabled when the main power is not present, only the Raspberry Pi is turned off, and the power is always restored after the power-off time, even if running on battery, with no main power present|
+|up_mode*|R/W|M|MCU config XPPM - Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato Pi UPS board are powered down after the shutdown wait time, and powered up again only when the main power is restored|
+|sd_switch|R/W|1|MCU config XPSD1 - Switch boot from SDA/SDB at every power-cycle|
+|sd_switch|R/W|0|MCU config XPSD0 - SD switch at power-cycle disabled (factory default)|
 
 ### RS-485 Config - `/sys/class/stratopi/rs485/`
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|mode*|R/W|A|Automatic (factory default): TX/RX switching is done automatically, based on speed and number of bits detection|
-|mode*|R/W|P|Passive: TX/RX switching is not actively controlled by Strato Pi|
-|mode*|R/W|F|Fixed: TX/RX switching is based on speed, number of bits, parity and number ofstop bits set in /params|
-|params*|R/W|&lt;rbps&gt;|Set RS-485 communication parameters: baud rate (r), number of bits (b), parity (p) and number of stop bits (s) for fixed mode, see below tables|
+|mode*|R/W|A|MCU config XSMA - Automatic (factory default): TX/RX switching is done automatically, based on speed and number of bits detection|
+|mode*|R/W|P|MCU config XSMP - Passive: TX/RX switching is not actively controlled by Strato Pi|
+|mode*|R/W|F|MCU config XSMF - Fixed: TX/RX switching is based on speed, number of bits, parity and number ofstop bits set in /params|
+|params*|R/W|&lt;rbps&gt;|MCU config XSP&lt;rbps&gt; - Set RS-485 communication parameters: baud rate (r), number of bits (b), parity (p) and number of stop bits (s) for fixed mode, see below tables|
 
 |Baud rate (r) value|Description|
 |---------------|-----------|
@@ -177,7 +177,7 @@ Examples:
 |----|:---:|:-:|-----------|
 |battery|R|0|Running on main power|
 |battery|R|1|Running on battery power|
-|power_delay*|R/W|&lt;t&gt;|UPS automatic power-cycle timeout, in seconds (0 - 99999). Strato Pi UPS will automatically initiate a delayed power-cycle (just like when /power/down_enabled is set to 1) if the main power source is not available for the number of seconds set. A value of 0 (factory default) disables the automatic power-cycle|
+|power_delay*|R/W|&lt;t&gt;|MCU config XUB&lt;t&gt; - UPS automatic power-cycle timeout, in seconds (0 - 99999). Strato Pi UPS will automatically initiate a delayed power-cycle (just like when /power/down_enabled is set to 1) if the main power source is not available for the number of seconds set. A value of 0 (factory default) disables the automatic power-cycle|
 
 ### Relay - `/sys/class/stratopi/relay/`
 
@@ -217,14 +217,14 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|sdx_enabled*|R/W|1|SDX bus enabled|
-|sdx_enabled*|R/W|0|SDX bus disabled|
-|sd1_enabled*|R/W|1|SD1 bus enabled|
-|sd1_enabled*|R/W|0|SD1 bus disabled|
-|sdx_default|R/W|A|At power-up, SDX bus routed to SDA and SD1 bus to SDB by default|
-|sdx_default|R/W|B|At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
-|sdx_routing|R/W|A|SDX bus routed to SDA and SD1 bus to SDB|
-|sdx_routing|R/W|B|SDX bus routed to SDB and SD1 bus to SDA|
+|sdx_enabled*|R/W|1|MCU config XSD01 - SDX bus enabled|
+|sdx_enabled*|R/W|0|MCU config XSD00 - SDX bus disabled|
+|sd1_enabled*|R/W|1|MCU config XSD11 - SD1 bus enabled|
+|sd1_enabled*|R/W|0|MCU config XSD10 - SD1 bus disabled|
+|sdx_default|R/W|A|MCU config XSDPA - At power-up, SDX bus routed to SDA and SD1 bus to SDB by default|
+|sdx_default|R/W|B|MCU config XSDPB - At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
+|sdx_routing|R/W|A|MCU config XSDRA - SDX bus routed to SDA and SD1 bus to SDB|
+|sdx_routing|R/W|B|MCU config XSDRB - SDX bus routed to SDB and SD1 bus to SDA|
 
 ### USB 1 - `/sys/class/stratopi/usb1/`
 
@@ -248,6 +248,29 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|config|W|S|Persist the current configuration in the controller to be retained across power cycles|
-|config|W|R|Restore the original factory configuration|
-|fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/07"|
+|config|W|S|MCU command XCCS - Persist the current configuration in the controller to be retained across power cycles|
+|config|W|R|MCU command XCCR - Restore the original factory configuration|
+|fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|MCU command XFW? - Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/07"|
+|fw_install|W|<fw_file>|Set the MCU in boot-loader mode and upload the specified firmware HEX file|
+|fw_install_progress|R|<p>|Progress of the current firmware upload process as percentage|
+
+#### Firmware upload
+
+The `/sys/class/stratopi/mcu/fw_install` sysfs file allows to upload a new firmware on Strato Pi's MCU. 
+
+To this end, output the content of the firmaware HEX file to `/sys/class/stratopi/mcu/fw_install` and then monitor the progress reading from `/sys/class/stratopi/mcu/fw_install_progress`. 
+
+The MCU will be set to boot-loader mode and the firware uploaded. When the progress reaches 100% you need to disable boot-loader mode by triggering a power-cycle, which is done by setting the shutdown line low (i.e. set `/sys/class/stratopi/power/down_enabled` to 0 or switch off the Raspberry Pi).
+
+For troubleshooting or monitoring the firmware upload process check the kernel log in `/var/log/kern.log`.
+
+Firmware upload axample:
+
+    $ cat firmware.hex > /sys/class/stratopi/mcu/fw_install &
+    [1] 14918
+    $ cat /sys/class/stratopi/mcu/fw_install_progress
+    0
+    [...]
+    $ cat /sys/class/stratopi/mcu/fw_install_progress
+    100
+    $ sudo shutdown now 
