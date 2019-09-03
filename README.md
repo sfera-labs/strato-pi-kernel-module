@@ -252,7 +252,7 @@ Examples:
 |config|W|R|MCU command XCCR - Restore the original factory configuration|
 |fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|MCU command XFW? - Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/07"|
 |fw_install|W|<fw_file>|Set the MCU in boot-loader mode and upload the specified firmware HEX file|
-|fw_install_progress|R|<p>|Progress of the current firmware upload process as percentage|
+|fw_install_progress|R|&lt;p&gt;|Progress of the current firmware upload process as percentage|
 
 #### Firmware upload
 
