@@ -194,8 +194,8 @@ Examples:
 |status|R/W|0|LED off|
 |status|R/W|1|LED on|
 |status|W|F|Flip LED's state|
-|beep|W|&lt;t&gt;|LED on for &lt;t&gt; ms|
-|beep|W|&lt;t_on&gt; &lt;t_off&gt; &lt;rep&gt;|LED blink &lt;rep&gt; times with &lt;t_on&gt;/&lt;t_off&gt; ms periods. E.g. "200 50 3"|
+|blink|W|&lt;t&gt;|LED on for &lt;t&gt; ms|
+|blink|W|&lt;t_on&gt; &lt;t_off&gt; &lt;rep&gt;|LED blink &lt;rep&gt; times with &lt;t_on&gt;/&lt;t_off&gt; ms periods. E.g. "200 50 3"|
 
 ### Button - `/sys/class/stratopi/button/`
 
