@@ -230,8 +230,8 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|enabled|R/W|0|USB 1 enabled|
-|enabled|R/W|1|USB 1 disabled|
+|disabled|R/W|0|USB 1 enabled|
+|disabled|R/W|1|USB 1 disabled|
 |fault|R|0|USB 1 ok|
 |fault|R|1|USB 1 fault|
 
@@ -239,8 +239,8 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|enabled|R/W|0|USB 2 enabled|
-|enabled|R/W|1|USB 2 disabled|
+|disabled|R/W|0|USB 2 enabled|
+|disabled|R/W|1|USB 2 disabled|
 |fault|R|0|USB 2 ok|
 |fault|R|1|USB 2 fault|
 
