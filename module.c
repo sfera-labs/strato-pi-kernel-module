@@ -119,10 +119,10 @@ static struct device_attribute devAttrSdSdxRouting;
 static struct device_attribute devAttrSdSdxDefault;
 
 static struct device_attribute devAttrUsb1Disabled;
-static struct device_attribute devAttrUsb1Fault;
+static struct device_attribute devAttrUsb1Ok;
 
 static struct device_attribute devAttrUsb2Disabled;
-static struct device_attribute devAttrUsb2Fault;
+static struct device_attribute devAttrUsb2Ok;
 
 static struct device_attribute devAttrMcuConfig;
 static struct device_attribute devAttrMcuFwVersion;
@@ -184,13 +184,13 @@ static int getGPIO(struct device* dev, struct device_attribute* attr) {
 	} else if (dev == pUsb1Device) {
 		if (attr == &devAttrUsb1Disabled) {
 			return GPIO_USB1_DISABLE;
-		} else if (attr == &devAttrUsb1Fault) {
+		} else if (attr == &devAttrUsb1Ok) {
 			return GPIO_USB1_FAULT;
 		}
 	} else if (dev == pUsb2Device) {
 		if (attr == &devAttrUsb2Disabled) {
 			return GPIO_USB2_DISABLE;
-		} else if (attr == &devAttrUsb2Fault) {
+		} else if (attr == &devAttrUsb2Ok) {
 			return GPIO_USB2_FAULT;
 		}
 	}
@@ -1000,9 +1000,9 @@ static struct device_attribute devAttrUsb1Disabled = { //
 				.store = GPIO_store, //
 		};
 
-static struct device_attribute devAttrUsb1Fault = { //
+static struct device_attribute devAttrUsb1Ok = { //
 		.attr = { //
-				.name = "fault", //
+				.name = "ok", //
 						.mode = 0440, //
 				},//
 				.show = GPIO_show, //
@@ -1018,9 +1018,9 @@ static struct device_attribute devAttrUsb2Disabled = { //
 				.store = GPIO_store, //
 		};
 
-static struct device_attribute devAttrUsb2Fault = { //
+static struct device_attribute devAttrUsb2Ok = { //
 		.attr = { //
-				.name = "fault", //
+				.name = "ok", //
 						.mode = 0440, //
 				},//
 				.show = GPIO_show, //
@@ -1106,7 +1106,7 @@ static void cleanup(void) {
 
 	if (pUsb1Device && !IS_ERR(pUsb1Device)) {
 		device_remove_file(pUsb1Device, &devAttrUsb1Disabled);
-		device_remove_file(pUsb1Device, &devAttrUsb1Fault);
+		device_remove_file(pUsb1Device, &devAttrUsb1Ok);
 
 		device_destroy(pDeviceClass, 0);
 
@@ -1118,7 +1118,7 @@ static void cleanup(void) {
 
 	if (pUsb2Device && !IS_ERR(pUsb2Device)) {
 		device_remove_file(pUsb2Device, &devAttrUsb2Disabled);
-		device_remove_file(pUsb2Device, &devAttrUsb2Fault);
+		device_remove_file(pUsb2Device, &devAttrUsb2Ok);
 
 		device_destroy(pDeviceClass, 0);
 
@@ -1471,12 +1471,12 @@ static int __init stratopi_init(void) {
 
 	if (pUsb1Device) {
 		result |= device_create_file(pUsb1Device, &devAttrUsb1Disabled);
-		result |= device_create_file(pUsb1Device, &devAttrUsb1Fault);
+		result |= device_create_file(pUsb1Device, &devAttrUsb1Ok);
 	}
 
 	if (pUsb2Device) {
 		result |= device_create_file(pUsb2Device, &devAttrUsb2Disabled);
-		result |= device_create_file(pUsb2Device, &devAttrUsb2Fault);
+		result |= device_create_file(pUsb2Device, &devAttrUsb2Ok);
 	}
 
 	if (pMcuDevice) {
