@@ -232,8 +232,8 @@ Examples:
 |----|:---:|:-:|-----------|
 |disabled|R/W|0|USB 1 enabled|
 |disabled|R/W|1|USB 1 disabled|
-|fault|R|0|USB 1 ok|
-|fault|R|1|USB 1 fault|
+|ok|R|0|USB 1 fault|
+|ok|R|1|USB 1 ok|
 
 ### USB 2 - `/sys/class/stratopi/usb2/`
 
@@ -241,8 +241,8 @@ Examples:
 |----|:---:|:-:|-----------|
 |disabled|R/W|0|USB 2 enabled|
 |disabled|R/W|1|USB 2 disabled|
-|fault|R|0|USB 2 ok|
-|fault|R|1|USB 2 fault|
+|ok|R|0|USB 2 fault|
+|ok|R|1|USB 2 ok|
 
 ### MCU - `/sys/class/stratopi/mcu/`
 
