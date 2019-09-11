@@ -113,7 +113,7 @@ Examples:
 |enable_mode*|R/W|D|MCU config XWED - Watchdog normally disabled (factory default)|
 |enable_mode*|R/W|A|MCU config XWEA - Watchdog always enabled|
 |timeout*|R/W|&lt;t&gt;|MCU config XWH&lt;t&gt; - Watchdog heartbeat timeout, in seconds (1 - 99999). Factory default: 60|
-|sd_switch|R/W|&lt;n > 0&gt;|MCU config XWSD&lt;n&gt; - Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. A value of n > 1 can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 1|
+|sd_switch|R/W|&lt;n&gt;|MCU config XWSD&lt;n&gt; (n &gt; 0) - Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. A value of n > 1 can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 1|
 |sd_switch|R/W|0|MCU config XWSD0 - SD switch on watchdog reset disabled (factory default)|
 
 ### Power - `/sys/class/stratopi/power/`
