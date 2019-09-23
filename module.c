@@ -87,6 +87,7 @@ static struct device_attribute devAttrWatchdogHeartbeat;
 static struct device_attribute devAttrWatchdogExpired;
 static struct device_attribute devAttrWatchdogEnableMode;
 static struct device_attribute devAttrWatchdogTimeout;
+static struct device_attribute devAttrWatchdogDownDelay;
 static struct device_attribute devAttrWatchdogSdSwitch;
 
 static struct device_attribute devAttrRs485Mode;
@@ -244,6 +245,10 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 		} else if (attr == &devAttrWatchdogTimeout) {
 			cmd[1] = 'W';
 			cmd[2] = 'H';
+			return 8;
+		} else if (attr == &devAttrWatchdogDownDelay) {
+			cmd[1] = 'W';
+			cmd[2] = 'W';
 			return 8;
 		} else if (attr == &devAttrWatchdogSdSwitch) {
 			cmd[1] = 'W';
@@ -793,6 +798,15 @@ static struct device_attribute devAttrWatchdogTimeout = { //
 				.store = MCU_store, //
 		};
 
+static struct device_attribute devAttrWatchdogDownDelay = { //
+		.attr = { //
+				.name = "down_delay", //
+						.mode = 0660, //
+				},//
+				.show = MCU_show, //
+				.store = MCU_store, //
+		};
+
 static struct device_attribute devAttrWatchdogSdSwitch = { //
 		.attr = { //
 				.name = "sd_switch", //
@@ -1163,6 +1177,7 @@ static void cleanup(void) {
 		device_remove_file(pWatchdogDevice, &devAttrWatchdogExpired);
 		device_remove_file(pWatchdogDevice, &devAttrWatchdogEnableMode);
 		device_remove_file(pWatchdogDevice, &devAttrWatchdogTimeout);
+		device_remove_file(pWatchdogDevice, &devAttrWatchdogDownDelay);
 		device_remove_file(pWatchdogDevice, &devAttrWatchdogSdSwitch);
 
 		device_destroy(pDeviceClass, 0);
@@ -1415,6 +1430,7 @@ static int __init stratopi_init(void) {
 		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogExpired);
 		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogEnableMode);
 		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogTimeout);
+		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogDownDelay);
 		if (pSdDevice) {
 			result |= device_create_file(pWatchdogDevice, &devAttrWatchdogSdSwitch);
 		}
