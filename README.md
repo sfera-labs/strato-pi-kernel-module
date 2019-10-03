@@ -1,6 +1,6 @@
 # Strato Pi driver kernel module
 
-Raspberry Pi kernel module for using [Strato Pi](https://www.sferalabs.cc/strato-pi/) via sysfs.
+Raspberry Pi kernel module for using [Strato Pi](https://www.sferalabs.cc/strato/) via sysfs.
 
 For instance, check if the watchdog is enabled:
 
