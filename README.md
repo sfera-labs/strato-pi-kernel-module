@@ -12,6 +12,9 @@ Enable the watchdog:
     
 Requires Strato Pi with firmware version >= 4.0.
 
+The functionalities relative to MCU configuration commands are further detailed in the [Strato Pi Logic Controller
+Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).
+
 ## Compile and Install
 
 If you don't have git installed:
@@ -68,6 +71,28 @@ then re-login to apply the group change and reload the module:
     su - $USER
     sudo rmmod stratopi.ko
     sudo insmod stratopi.ko
+    
+When loading the module, it performs an autodetect of the Strato Pi model. To bypass the autodetect you can load it passing the `model_num` parameter:
+
+|Hardware|`model_num`|
+|--------|:---------:|
+|Strato Pi Base rev. < 3.0|1|
+|Strato Pi UPS rev. < 3.0|2|
+|Strato Pi CAN|3|
+|Strato Pi CM|4|
+|Strato Pi Base rev. ≥ 3.0|5|
+|Strato Pi UPS rev. ≥ 3.0|6|
+|Strato Pi CM Duo|7|
+
+For instance, for Strato Pi CM Duo:
+
+    sudo insmod stratopi.ko model_num=7
+    
+If you have the module automatically loaded at boot, you can pass the `model_num` parameter to the module by creating the file `/etc/modprobe.d/stratopi.conf` which contains the line
+
+    options stratopi model_num=<n>
+    
+Where `<n>` is set to the appropriate value.
 
 ## Usage
 
