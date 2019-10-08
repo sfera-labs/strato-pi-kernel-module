@@ -1,4 +1,4 @@
-# Strato Pi driver kernel module
+# Strato Pi kernel module
 
 Raspberry Pi kernel module for using [Strato Pi](https://www.sferalabs.cc/strato/) via sysfs.
 
