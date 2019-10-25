@@ -83,6 +83,7 @@ When loading the module, it performs an autodetect of the Strato Pi model. To by
 |Strato Pi Base rev. ≥ 3.0|5|
 |Strato Pi UPS rev. ≥ 3.0|6|
 |Strato Pi CM Duo|7|
+|Strato Pi CAN rev. ≥ 2.0|8|
 
 For instance, for Strato Pi CM Duo:
 

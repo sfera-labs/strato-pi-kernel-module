@@ -28,6 +28,7 @@
 #define MODEL_BASE_3	5
 #define MODEL_UPS_3		6
 #define MODEL_CMDUO		7
+#define MODEL_CAN_2		8
 
 #define SOFT_UART_RX_BUFF_SIZE 	100
 
@@ -39,7 +40,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.0");
+MODULE_VERSION("1.1");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -1498,7 +1499,7 @@ static int __init stratopi_init(void) {
 	if (pMcuDevice) {
 		result |= device_create_file(pMcuDevice, &devAttrMcuConfig);
 		result |= device_create_file(pMcuDevice, &devAttrMcuFwVersion);
-		if (model_num == MODEL_CMDUO || model_num == MODEL_UPS_3 || model_num == MODEL_BASE_3) {
+		if (model_num == MODEL_CMDUO || model_num == MODEL_UPS_3 || model_num == MODEL_BASE_3 || model_num == MODEL_CAN_2) {
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstall);
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstallProgress);
 		}
