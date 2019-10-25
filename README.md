@@ -243,13 +243,13 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|sdx_enabled*|R/W|1|MCU config XSD01 - SDX bus enabled|
+|sdx_enabled*|R/W|1|MCU config XSD01 - SDX bus enabled (factory default)|
 |sdx_enabled*|R/W|0|MCU config XSD00 - SDX bus disabled|
 |sd1_enabled*|R/W|1|MCU config XSD11 - SD1 bus enabled|
-|sd1_enabled*|R/W|0|MCU config XSD10 - SD1 bus disabled|
-|sdx_default|R/W|A|MCU config XSDPA - At power-up, SDX bus routed to SDA and SD1 bus to SDB by default|
+|sd1_enabled*|R/W|0|MCU config XSD10 - SD1 bus disabled (factory default)|
+|sdx_default|R/W|A|MCU config XSDPA - At power-up, SDX bus routed to SDA and SD1 bus to SDB by default (factory default)|
 |sdx_default|R/W|B|MCU config XSDPB - At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
-|sdx_routing|R/W|A|MCU config XSDRA - SDX bus routed to SDA and SD1 bus to SDB|
+|sdx_routing|R/W|A|MCU config XSDRA - SDX bus routed to SDA and SD1 bus to SDB (factory default)|
 |sdx_routing|R/W|B|MCU config XSDRB - SDX bus routed to SDB and SD1 bus to SDA|
 
 ### USB 1 - `/sys/class/stratopi/usb1/`
