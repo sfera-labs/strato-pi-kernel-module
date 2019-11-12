@@ -13,7 +13,11 @@
  *
  */
 
+#include <asm/segment.h>
+#include <asm/uaccess.h>
+#include <linux/buffer_head.h>
 #include <linux/delay.h>
+#include <linux/fs.h>
 #include <linux/gpio.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -40,7 +44,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.2");
+MODULE_VERSION("1.3");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -1293,7 +1297,7 @@ static bool softUartInit(void) {
 	return true;
 }
 
-static bool detectFwVerAndModelNumber(void) {
+static bool getFwVerAndModelNumber(void) {
 	char *end = NULL;
 	if (!softUartSendAndWait("XFW?", 4, 9, 300, true)
 			&& softUartRxBuffIdx < 6) {
@@ -1309,17 +1313,79 @@ static bool detectFwVerAndModelNumber(void) {
 	return (kstrtoint(end + 1, 10, &model_num) == 0);
 }
 
-static bool tryDetectFwAndModelAs(int modelTry) {
+static bool tryDetectFwVerAndModelAs(int modelTry) {
 	model_num = modelTry;
 	setGPIO();
 	if (!softUartInit()) {
 		return false;
 	}
-	if (!detectFwVerAndModelNumber()) {
+	if (!getFwVerAndModelNumber()) {
 		raspberry_soft_uart_finalize();
 		return false;
 	}
 	return true;
+}
+
+static struct file *file_open(const char *path, int flags, int rights) {
+	struct file *filp = NULL;
+	mm_segment_t oldfs;
+	int err = 0;
+	oldfs = get_fs();
+	set_fs(get_ds());
+	filp = filp_open(path, flags, rights);
+	set_fs(oldfs);
+	if (IS_ERR(filp)) {
+		err = PTR_ERR(filp);
+		return NULL;
+	}
+	return filp;
+}
+
+static void file_close(struct file *file) {
+	filp_close(file, NULL);
+}
+
+static int file_read(struct file *file, loff_t offset, unsigned char *buf,
+		size_t count) {
+	mm_segment_t oldfs;
+	int ret;
+	oldfs = get_fs();
+	set_fs(get_ds());
+	ret = kernel_read(file, buf, count, &offset);
+	set_fs(oldfs);
+	return ret;
+}
+
+static bool isComputeModule(void) {
+	struct file *f = NULL;
+	int res;
+	unsigned char buff[29];
+	f = file_open("/proc/device-tree/model", O_RDONLY, 0);
+	if (!f) {
+		printk(KERN_ALERT "stratopi: * | error opening file /proc/device-tree/model\n");
+		return false;
+	}
+	res = file_read(f, 0, buff, 28);
+	file_close(f);
+	if (res < 28) {
+		printk(KERN_ALERT "stratopi: * | error reading file /proc/device-tree/model\n");
+		return false;
+	}
+	buff[28] = '\0';
+	printk(KERN_INFO "stratopi: - | RPi model: %s\n", buff);
+	return (strstr(buff, "Compute Module") != NULL);
+}
+
+static bool detectFwVerAndModel(void) {
+	if (isComputeModule()) {
+		if (tryDetectFwVerAndModelAs(MODEL_CMDUO)) {
+			return true;
+		} else {
+			return tryDetectFwVerAndModelAs(MODEL_CM);
+		}
+	} else {
+		return tryDetectFwVerAndModelAs(MODEL_BASE);
+	}
 }
 
 static int __init stratopi_init(void) {
@@ -1345,14 +1411,10 @@ static int __init stratopi_init(void) {
 		}
 	} else {
 		printk(KERN_INFO "stratopi: - | detecting model...\n");
-		if (!tryDetectFwAndModelAs(MODEL_CMDUO)) {
-			if (!tryDetectFwAndModelAs(MODEL_CM)) {
-				if (!tryDetectFwAndModelAs(MODEL_BASE)) {
-					printk(KERN_ALERT "stratopi: * | error detecting model\n");
-					result = -1;
-					goto fail;
-				}
-			}
+		if (!detectFwVerAndModel()) {
+			printk(KERN_ALERT "stratopi: * | error detecting model\n");
+			result = -1;
+			goto fail;
 		}
 	}
 
