@@ -350,8 +350,12 @@ static ssize_t GPIOBlink_store(struct device* dev,
 		return -EINVAL;
 	}
 	on = simple_strtol(buf, &end, 10);
-	off = simple_strtol(end + 1, &end, 10);
-	rep = simple_strtol(end + 1, NULL, 10);
+	if (++end < buf + count) {
+		off = simple_strtol(end, &end, 10);
+		if (++end < buf + count) {
+			rep = simple_strtol(end, NULL, 10);
+		}
+	}
 	if (rep < 1) {
 		rep = 1;
 	}
@@ -749,347 +753,347 @@ static ssize_t fwInstallProgress_show(struct device* dev,
 	return sprintf(buf, "%d\n", fwProgress);
 }
 
-static struct device_attribute devAttrBuzzerStatus = { //
-		.attr = { //
-				.name = "status", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrBuzzerStatus = {
+	.attr = {
+		.name = "status",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrBuzzerBeep = { //
-		.attr = { //
-				.name = "beep", //
-						.mode = 0220, //
-				},//
-				.show = NULL, //
-				.store = GPIOBlink_store, //
-		};
+static struct device_attribute devAttrBuzzerBeep = {
+	.attr = {
+		.name = "beep",
+		.mode = 0220,
+	},
+	.show = NULL,
+	.store = GPIOBlink_store,
+};
 
-static struct device_attribute devAttrWatchdogEnabled = { //
-		.attr = { //
-				.name = "enabled", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrWatchdogEnabled = {
+	.attr = {
+		.name = "enabled",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrWatchdogHeartbeat = { //
-		.attr = { //
-				.name = "heartbeat", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrWatchdogHeartbeat = {
+	.attr = {
+		.name = "heartbeat",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrWatchdogExpired = { //
-		.attr = { //
-				.name = "expired", //
-						.mode = 0440, //
-				},//
-				.show = GPIO_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrWatchdogExpired = {
+	.attr = {
+		.name = "expired",
+		.mode = 0440,
+	},
+	.show = GPIO_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrWatchdogEnableMode = { //
-		.attr = { //
-				.name = "enable_mode", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrWatchdogEnableMode = {
+	.attr = {
+		.name = "enable_mode",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrWatchdogTimeout = { //
-		.attr = { //
-				.name = "timeout", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrWatchdogTimeout = {
+	.attr = {
+		.name = "timeout",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrWatchdogDownDelay = { //
-		.attr = { //
-				.name = "down_delay", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrWatchdogDownDelay = {
+	.attr = {
+		.name = "down_delay",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrWatchdogSdSwitch = { //
-		.attr = { //
-				.name = "sd_switch", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrWatchdogSdSwitch = {
+	.attr = {
+		.name = "sd_switch",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrRs485Mode = { //
-		.attr = { //
-				.name = "mode", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrRs485Mode = {
+	.attr = {
+		.name = "mode",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrRs485Params = { //
-		.attr = { //
-				.name = "params", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrRs485Params = {
+	.attr = {
+		.name = "params",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrPowerDownEnabled = { //
-		.attr = { //
-				.name = "down_enabled", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrPowerDownEnabled = {
+	.attr = {
+		.name = "down_enabled",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrPowerDownDelay = { //
-		.attr = { //
-				.name = "down_delay", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrPowerDownDelay = {
+	.attr = {
+		.name = "down_delay",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrPowerDownEnableMode = { //
-		.attr = { //
-				.name = "down_enable_mode", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrPowerDownEnableMode = {
+	.attr = {
+		.name = "down_enable_mode",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrPowerOffTime = { //
-		.attr = { //
-				.name = "off_time", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrPowerOffTime = {
+	.attr = {
+		.name = "off_time",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrPowerUpDelay = { //
-		.attr = { //
-				.name = "up_delay", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrPowerUpDelay = {
+	.attr = {
+		.name = "up_delay",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrPowerUpMode = { //
-		.attr = { //
-				.name = "up_mode", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrPowerUpMode = {
+	.attr = {
+		.name = "up_mode",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrPowerSdSwitch = { //
-		.attr = { //
-				.name = "sd_switch", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrPowerSdSwitch = {
+	.attr = {
+		.name = "sd_switch",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrUpsBattery = { //
-		.attr = { //
-				.name = "battery", //
-						.mode = 0440, //
-				},//
-				.show = GPIO_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrUpsBattery = {
+	.attr = {
+		.name = "battery",
+		.mode = 0440,
+	},
+	.show = GPIO_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrUpsPowerDelay = { //
-		.attr = { //
-				.name = "power_delay", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrUpsPowerDelay = {
+	.attr = {
+		.name = "power_delay",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrRelayStatus = { //
-		.attr = { //
-				.name = "status", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrRelayStatus = {
+	.attr = {
+		.name = "status",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrLedStatus = { //
-		.attr = { //
-				.name = "status", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrLedStatus = {
+	.attr = {
+		.name = "status",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrLedBlink = { //
-		.attr = { //
-				.name = "blink", //
-						.mode = 0220, //
-				},//
-				.show = NULL, //
-				.store = GPIOBlink_store, //
-		};
+static struct device_attribute devAttrLedBlink = {
+	.attr = {
+		.name = "blink",
+		.mode = 0220,
+	},
+	.show = NULL,
+	.store = GPIOBlink_store,
+};
 
-static struct device_attribute devAttrButtonStatus = { //
-		.attr = { //
-				.name = "status", //
-						.mode = 0440, //
-				},//
-				.show = GPIO_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrButtonStatus = {
+	.attr = {
+		.name = "status",
+		.mode = 0440,
+	},
+	.show = GPIO_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrExpBusEnabled = { //
-		.attr = { //
-				.name = "enabled", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrExpBusEnabled = {
+	.attr = {
+		.name = "enabled",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrExpBusAux = { //
-		.attr = { //
-				.name = "aux", //
-						.mode = 0440, //
-				},//
-				.show = GPIO_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrExpBusAux = {
+	.attr = {
+		.name = "aux",
+		.mode = 0440,
+	},
+	.show = GPIO_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrSdSdxEnabled = { //
-		.attr = { //
-				.name = "sdx_enabled", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrSdSdxEnabled = {
+	.attr = {
+		.name = "sdx_enabled",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrSdSd1Enabled = { //
-		.attr = { //
-				.name = "sd1_enabled", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrSdSd1Enabled = {
+	.attr = {
+		.name = "sd1_enabled",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrSdSdxRouting = { //
-		.attr = { //
-				.name = "sdx_routing", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrSdSdxRouting = {
+	.attr = {
+		.name = "sdx_routing",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrSdSdxDefault = { //
-		.attr = { //
-				.name = "sdx_default", //
-						.mode = 0660, //
-				},//
-				.show = MCU_show, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrSdSdxDefault = {
+	.attr = {
+		.name = "sdx_default",
+		.mode = 0660,
+	},
+	.show = MCU_show,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrUsb1Disabled = { //
-		.attr = { //
-				.name = "disabled", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrUsb1Disabled = {
+	.attr = {
+		.name = "disabled",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrUsb1Ok = { //
-		.attr = { //
-				.name = "ok", //
-						.mode = 0440, //
-				},//
-				.show = GPIO_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrUsb1Ok = {
+	.attr = {
+		.name = "ok",
+		.mode = 0440,
+	},
+	.show = GPIO_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrUsb2Disabled = { //
-		.attr = { //
-				.name = "disabled", //
-						.mode = 0660, //
-				},//
-				.show = GPIO_show, //
-				.store = GPIO_store, //
-		};
+static struct device_attribute devAttrUsb2Disabled = {
+	.attr = {
+		.name = "disabled",
+		.mode = 0660,
+	},
+	.show = GPIO_show,
+	.store = GPIO_store,
+};
 
-static struct device_attribute devAttrUsb2Ok = { //
-		.attr = { //
-				.name = "ok", //
-						.mode = 0440, //
-				},//
-				.show = GPIO_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrUsb2Ok = {
+	.attr = {
+		.name = "ok",
+		.mode = 0440,
+	},
+	.show = GPIO_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrMcuConfig = { //
-		.attr = { //
-				.name = "config", //
-						.mode = 0220, //
-				},//
-				.show = NULL, //
-				.store = MCU_store, //
-		};
+static struct device_attribute devAttrMcuConfig = {
+	.attr = {
+		.name = "config",
+		.mode = 0220,
+	},
+	.show = NULL,
+	.store = MCU_store,
+};
 
-static struct device_attribute devAttrMcuFwVersion = { //
-		.attr = { //
-				.name = "fw_version", //
-						.mode = 0440, //
-				},//
-				.show = MCU_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrMcuFwVersion = {
+	.attr = {
+		.name = "fw_version",
+		.mode = 0440,
+	},
+	.show = MCU_show,
+	.store = NULL,
+};
 
-static struct device_attribute devAttrMcuFwInstall = { //
-		.attr = { //
-				.name = "fw_install", //
-						.mode = 0220, //
-				},//
-				.show = NULL, //
-				.store = fwInstall_store, //
-		};
+static struct device_attribute devAttrMcuFwInstall = {
+	.attr = {
+		.name = "fw_install",
+		.mode = 0220,
+	},
+	.show = NULL,
+	.store = fwInstall_store,
+};
 
-static struct device_attribute devAttrMcuFwInstallProgress = { //
-		.attr = { //
-				.name = "fw_install_progress", //
-						.mode = 0440, //
-				},//
-				.show = fwInstallProgress_show, //
-				.store = NULL, //
-		};
+static struct device_attribute devAttrMcuFwInstallProgress = {
+	.attr = {
+		.name = "fw_install_progress",
+		.mode = 0440,
+	},
+	.show = fwInstallProgress_show,
+	.store = NULL,
+};
 
 static void cleanup(void) {
 	if (pLedDevice && !IS_ERR(pLedDevice)) {
