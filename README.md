@@ -27,7 +27,7 @@ Clone this repo:
     
 Install the Raspberry Pi kernel headers:
 
-    sudo apt-get install raspberrypi-kernel-headers
+    sudo apt install raspberrypi-kernel-headers
 
 Make and install:
 
