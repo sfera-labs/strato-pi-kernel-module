@@ -19,11 +19,11 @@ Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi
 
 If you don't have git installed:
 
-    sudo apt-get install git-core
+    sudo apt install git
 
 Clone this repo:
 
-    git clone --recursive https://github.com/sfera-labs/strato-pi-kernel-module.git
+    git clone --depth 1 --recursive https://github.com/sfera-labs/strato-pi-kernel-module.git
     
 Install the Raspberry Pi kernel headers:
 
