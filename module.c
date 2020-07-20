@@ -44,7 +44,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.3");
+MODULE_VERSION("1.4");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -297,7 +297,7 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 		} else if (attr == &devAttrMcuFwVersion) {
 			cmd[1] = 'F';
 			cmd[2] = 'W';
-			return 9;
+			return fwVerMaj == 3 ? 6 : 9;
 		}
 	}
 	return -1;
@@ -1296,7 +1296,7 @@ static bool softUartInit(void) {
 	return true;
 }
 
-static bool getFwVerAndModelNumber(void) {
+static bool getFwVerAndModelNumber(int modelTry) {
 	char *end = NULL;
 	if (!softUartSendAndWait("XFW?", 4, 9, 300, false)
 			&& softUartRxBuffIdx < 6) {
@@ -1306,7 +1306,11 @@ static bool getFwVerAndModelNumber(void) {
 	fwVerMin = simple_strtol(end + 1, &end, 10);
 	printk(KERN_INFO "stratopi: - | FW version %d.%d\n", fwVerMaj, fwVerMin);
 	if (fwVerMaj < 4) {
-		printk(KERN_ALERT "stratopi: * | FW version not supported (< 4.0)\n");
+		if (modelTry == 4 && fwVerMin >= 5 && softUartRxBuffIdx == 6) {
+			model_num = 4;
+			return true;
+		}
+		printk(KERN_ALERT "stratopi: * | FW version not supported\n");
 		return false;
 	}
 	return (kstrtoint(end + 1, 10, &model_num) == 0);
@@ -1318,7 +1322,7 @@ static bool tryDetectFwVerAndModelAs(int modelTry) {
 	if (!softUartInit()) {
 		return false;
 	}
-	if (!getFwVerAndModelNumber()) {
+	if (!getFwVerAndModelNumber(modelTry)) {
 		raspberry_soft_uart_finalize();
 		return false;
 	}
@@ -1418,6 +1422,10 @@ static int __init stratopi_init(void) {
 	}
 
 	printk(KERN_INFO "stratopi: - | model=%d\n", model_num);
+
+	if (model_num == MODEL_CM) {
+		fwVerMaj = 3;
+	}
 
 	softUartInitialized = true;
 
