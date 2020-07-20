@@ -10,7 +10,7 @@ Enable the watchdog:
 
     echo 1 > /sys/class/stratopi/watchdog/enabled
     
-Requires Strato Pi with firmware version >= 4.0.
+Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with firmware version >= 4.0.
 
 The functionalities relative to MCU configuration commands are further detailed in the [Strato Pi Logic Controller
 Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).
@@ -276,7 +276,7 @@ Examples:
 |----|:---:|:-:|-----------|
 |config|W|S|MCU command XCCS - Persist the current configuration in the controller to be retained across power cycles|
 |config|W|R|MCU command XCCR - Restore the original factory configuration|
-|fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|MCU command XFW? - Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/07"|
+|fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|MCU command XFW? - Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/07" (for firmware versions < 4.0 the model code is not returned)|
 |fw_install|W|<fw_file>|Set the MCU in boot-loader mode and upload the specified firmware HEX file|
 |fw_install_progress|R|&lt;p&gt;|Progress of the current firmware upload process as percentage|
 
