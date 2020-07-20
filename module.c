@@ -359,7 +359,6 @@ static ssize_t GPIOBlink_store(struct device* dev,
 	if (rep < 1) {
 		rep = 1;
 	}
-	printk(KERN_INFO "stratopi: - | gpio blink %ld %ld %ld\n", on, off, rep);
 	if (on > 0) {
 		for (i = 0; i < rep; i++) {
 			gpio_set_value(gpio, 1);
@@ -375,7 +374,6 @@ static ssize_t GPIOBlink_store(struct device* dev,
 
 static void softUartRxCallback(unsigned char character) {
 	if (softUartRxBuffIdx < SOFT_UART_RX_BUFF_SIZE - 1) {
-		// printk(KERN_INFO "stratopi: - | soft uart ch %02X\n", (int) (character & 0xff));
 		softUartRxBuff[softUartRxBuffIdx++] = character;
 	}
 }
@@ -418,11 +416,10 @@ static ssize_t MCU_show(struct device* dev, struct device_attribute* attr,
 	}
 
 	if (!mutex_trylock(&mcuMutex)) {
-		printk(KERN_ALERT "stratopi: * | MCU busy\n");
 		return -EBUSY;
 	}
 
-	if (!softUartSendAndWait(cmd, cmdLen, respLen, 300, true)) {
+	if (!softUartSendAndWait(cmd, cmdLen, respLen, 300, false)) {
 		ret = -EIO;
 	} else if (kstrtol((const char *) (softUartRxBuff + prefixLen), 10, &val)
 			== 0) {
@@ -468,11 +465,10 @@ static ssize_t MCU_store(struct device* dev, struct device_attribute* attr,
 	cmd[prefixLen + padd + i] = '\0';
 
 	if (!mutex_trylock(&mcuMutex)) {
-		printk(KERN_ALERT "stratopi: * | MCU busy\n");
 		return -EBUSY;
 	}
 
-	if (!softUartSendAndWait(cmd, cmdLen, cmdLen, 300, true)) {
+	if (!softUartSendAndWait(cmd, cmdLen, cmdLen, 300, false)) {
 		ret = -EIO;
 	} else {
 		for (i = 0; i < padd; i++) {
@@ -554,7 +550,6 @@ static ssize_t fwInstall_store(struct device* dev,
 	char cmd[72 + 1];
 
 	if (!mutex_trylock(&mcuMutex)) {
-		printk(KERN_ALERT "stratopi: * | MCU busy\n");
 		return -EBUSY;
 	}
 
@@ -1303,7 +1298,7 @@ static bool softUartInit(void) {
 
 static bool getFwVerAndModelNumber(void) {
 	char *end = NULL;
-	if (!softUartSendAndWait("XFW?", 4, 9, 300, true)
+	if (!softUartSendAndWait("XFW?", 4, 9, 300, false)
 			&& softUartRxBuffIdx < 6) {
 		return false;
 	}
