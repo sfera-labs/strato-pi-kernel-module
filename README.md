@@ -12,9 +12,6 @@ Enable the watchdog:
     
 Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with firmware version >= 4.0.
 
-The functionalities relative to MCU configuration commands are further detailed in the [Strato Pi Logic Controller
-Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).
-
 ## Compile and Install
 
 If you don't have git installed:
@@ -104,9 +101,10 @@ Depending on the model you will find the available ones.
 
 You can read and/or write to these files to configure, monitor and control your Strato Pi.
 
-The values of the configuration files marked with * can be permanently saved in the Strato Pi controller using the `/mcu/config` file.
-If not permanently saved, the parameters will be reset to the original factory defaults, or to
-the previously saved user configuration, after every power cycle of the Raspberry Pi.
+Files written in _italic_ are configuration parameters further detailed in the [Strato Pi Logic Controller Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).
+Configuration parameters marked with * are not persistent, i.e. their values are reset to default after a power cycle. To change the default values use the `/mcu/config` file (see below).
+
+This allows to have a different configuration during the boot up phase, even after an abrupt shutdown. For instance, you may want a short watchdog timeout while your application is running, but it needs to be reset to a longer timeout when a power cycle occurs so that Strato Pi has the time to boot and restart your application handling the watchdog heartbeat.
 
 ### Buzzer - `/sys/class/stratopi/buzzer/`
 
@@ -136,12 +134,12 @@ Examples:
 |heartbeat|W|0|Set watchdog heartbeat line low|
 |heartbeat|W|1|Set watchdog heartbeat line high|
 |heartbeat|W|F|Flip watchdog heartbeat state|
-|enable_mode*|R/W|D|MCU config XWED - Watchdog normally disabled (factory default)|
-|enable_mode*|R/W|A|MCU config XWEA - Watchdog always enabled|
-|timeout*|R/W|&lt;t&gt;|MCU config XWH&lt;t&gt; - Watchdog heartbeat timeout, in seconds (1 - 99999). Factory default: 60|
-|down_delay*|R/W|&lt;t&gt;|MCU config XWW&lt;t&gt; - Forced shutdown delay from the moment the timeout is expired and the shutdown cycle has not been enabled, in seconds (1 - 99999). Factory default: 60|
-|sd_switch|R/W|&lt;n&gt;|MCU config XWSD&lt;n&gt; (0 &lt; n &lt; 9) - Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. A value of n > 1 can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 1|
-|sd_switch|R/W|0|MCU config XWSD0 - SD switch on watchdog reset disabled (factory default)|
+|_enable_mode_*|R/W|D|MCU config XWED - Watchdog normally disabled (factory default)|
+|_enable_mode_*|R/W|A|MCU config XWEA - Watchdog always enabled|
+|_timeout_*|R/W|&lt;t&gt;|MCU config XWH&lt;t&gt; - Watchdog heartbeat timeout, in seconds (1 - 99999). Factory default: 60|
+|_down_delay_*|R/W|&lt;t&gt;|MCU config XWW&lt;t&gt; - Forced shutdown delay from the moment the timeout is expired and the shutdown cycle has not been enabled, in seconds (1 - 99999). Factory default: 60|
+|_sd_switch_|R/W|&lt;n&gt;|MCU config XWSD&lt;n&gt; (0 &lt; n &lt; 9) - Switch boot from SDA/SDB after &lt;n&gt; consecutive watchdog resets, if no heartbeat is detected. A value of n > 1 can be used with /enable_mode set to A only; if /enable_mode is set to D, then /sd_switch is set automatically to 1|
+|_sd_switch_|R/W|0|MCU config XWSD0 - SD switch on watchdog reset disabled (factory default)|
 
 ### Power - `/sys/class/stratopi/power/`
 
@@ -149,24 +147,24 @@ Examples:
 |----|:---:|:-:|-----------|
 |down_enabled|R/W|0|Delayed shutdown cycle disabled|
 |down_enabled|R/W|1|Delayed shutdown cycle enabled|
-|down_delay*|R/W|&lt;t&gt;|MCU config XPW&lt;t&gt; - Shutdown delay from the moment it is enabled, in seconds (1 - 99999). Factory default: 60|
-|off_time*|R/W|&lt;t&gt;|MCU config XPO&lt;t&gt; - Duration of power-off, in seconds (1 - 99999). Factory default: 5|
-|up_delay*|R/W|&lt;t&gt;|MCU config XPU&lt;t&gt; - Power-up delay after main power is restored, in seconds (0 - 99999). Factory default: 0|
-|down_enable_mode*|R/W|I|MCU config XPEI - Immediate (factory default): when shutdown is enabled, Strato Pi will immediately initiate the power-cycle, i.e. wait for the time specified in /down_delay and then power off the Pi board for the time specified in /off_time|
-|down_enable_mode*|R/W|A|MCU config XPEA - Arm: enabling shutdown will arm the shutdown procedure, but will not start the power-cycle until the shutdown enable line goes low again (i.e. shutdown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will initiate the power-cycle|
-|up_mode*|R/W|A|MCU config XPPA - Always: if shutdown is enabled when the main power is not present, only the Raspberry Pi is turned off, and the power is always restored after the power-off time, even if running on battery, with no main power present|
-|up_mode*|R/W|M|MCU config XPPM - Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato Pi UPS board are powered down after the shutdown wait time, and powered up again only when the main power is restored|
-|sd_switch|R/W|1|MCU config XPSD1 - Switch boot from SDA/SDB at every power-cycle|
-|sd_switch|R/W|0|MCU config XPSD0 - SD switch at power-cycle disabled (factory default)|
+|_down_delay_*|R/W|&lt;t&gt;|MCU config XPW&lt;t&gt; - Shutdown delay from the moment it is enabled, in seconds (1 - 99999). Factory default: 60|
+|_off_time_*|R/W|&lt;t&gt;|MCU config XPO&lt;t&gt; - Duration of power-off, in seconds (1 - 99999). Factory default: 5|
+|_up_delay_*|R/W|&lt;t&gt;|MCU config XPU&lt;t&gt; - Power-up delay after main power is restored, in seconds (0 - 99999). Factory default: 0|
+|_down_enable_mode_*|R/W|I|MCU config XPEI - Immediate (factory default): when shutdown is enabled, Strato Pi will immediately initiate the power-cycle, i.e. wait for the time specified in /down_delay and then power off the Pi board for the time specified in /off_time|
+|_down_enable_mode_*|R/W|A|MCU config XPEA - Arm: enabling shutdown will arm the shutdown procedure, but will not start the power-cycle until the shutdown enable line goes low again (i.e. shutdown disabled or Raspberry Pi switched off). After the line goes low, Strato Pi will initiate the power-cycle|
+|_up_mode_*|R/W|A|MCU config XPPA - Always: if shutdown is enabled when the main power is not present, only the Raspberry Pi is turned off, and the power is always restored after the power-off time, even if running on battery, with no main power present|
+|_up_mode_*|R/W|M|MCU config XPPM - Main power (factory default): if shutdown is enabled when the main power is not present, the Raspberry Pi and the Strato Pi UPS board are powered down after the shutdown wait time, and powered up again only when the main power is restored|
+|_sd_switch_|R/W|1|MCU config XPSD1 - Switch boot from SDA/SDB at every power-cycle|
+|_sd_switch_|R/W|0|MCU config XPSD0 - SD switch at power-cycle disabled (factory default)|
 
 ### RS-485 Config - `/sys/class/stratopi/rs485/`
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|mode*|R/W|A|MCU config XSMA - Automatic (factory default): TX/RX switching is done automatically, based on speed and number of bits detection|
-|mode*|R/W|P|MCU config XSMP - Passive: TX/RX switching is not actively controlled by Strato Pi|
-|mode*|R/W|F|MCU config XSMF - Fixed: TX/RX switching is based on speed, number of bits, parity and number ofstop bits set in /params|
-|params*|R/W|&lt;rbps&gt;|MCU config XSP&lt;rbps&gt; - Set RS-485 communication parameters: baud rate (r), number of bits (b), parity (p) and number of stop bits (s) for fixed mode, see below tables|
+|_mode_*|R/W|A|MCU config XSMA - Automatic (factory default): TX/RX switching is done automatically, based on speed and number of bits detection|
+|_mode_*|R/W|P|MCU config XSMP - Passive: TX/RX switching is not actively controlled by Strato Pi|
+|_mode_*|R/W|F|MCU config XSMF - Fixed: TX/RX switching is based on speed, number of bits, parity and number ofstop bits set in /params|
+|_params_*|R/W|&lt;rbps&gt;|MCU config XSP&lt;rbps&gt; - Set RS-485 communication parameters: baud rate (r), number of bits (b), parity (p) and number of stop bits (s) for fixed mode, see below tables|
 
 |Baud rate (r) value|Description|
 |---------------|-----------|
@@ -184,13 +182,11 @@ Examples:
 |7|7 bit|
 |8|8 bit (factory default)|
 
-
 |Parity (p) value|Description|
 |---------------|-----------|
 |N|No parity (factory default)|
 |E|Even parity|
 |O|Odd parity|
-
 
 |Stop bits (s) value|Description|
 |---------------|-----------|
@@ -203,7 +199,7 @@ Examples:
 |----|:---:|:-:|-----------|
 |battery|R|0|Running on main power|
 |battery|R|1|Running on battery power|
-|power_delay*|R/W|&lt;t&gt;|MCU config XUB&lt;t&gt; - UPS automatic power-cycle timeout, in seconds (0 - 99999). Strato Pi UPS will automatically initiate a delayed power-cycle (just like when /power/down_enabled is set to 1) if the main power source is not available for the number of seconds set. A value of 0 (factory default) disables the automatic power-cycle|
+|_power_delay_*|R/W|&lt;t&gt;|MCU config XUB&lt;t&gt; - UPS automatic power-cycle timeout, in seconds (0 - 99999). Strato Pi UPS will automatically initiate a delayed power-cycle (just like when /power/down_enabled is set to 1) if the main power source is not available for the number of seconds set. A value of 0 (factory default) disables the automatic power-cycle|
 
 ### Relay - `/sys/class/stratopi/relay/`
 
@@ -243,14 +239,14 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|sdx_enabled*|R/W|1|MCU config XSD01 - SDX bus enabled (factory default)|
-|sdx_enabled*|R/W|0|MCU config XSD00 - SDX bus disabled|
-|sd1_enabled*|R/W|1|MCU config XSD11 - SD1 bus enabled|
-|sd1_enabled*|R/W|0|MCU config XSD10 - SD1 bus disabled (factory default)|
-|sdx_default|R/W|A|MCU config XSDPA - At power-up, SDX bus routed to SDA and SD1 bus to SDB by default (factory default)|
-|sdx_default|R/W|B|MCU config XSDPB - At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
-|sdx_routing|R/W|A|MCU config XSDRA - SDX bus routed to SDA and SD1 bus to SDB (factory default)|
-|sdx_routing|R/W|B|MCU config XSDRB - SDX bus routed to SDB and SD1 bus to SDA|
+|_sdx_enabled_*|R/W|1|MCU config XSD01 - SDX bus enabled (factory default)|
+|_sdx_enabled_*|R/W|0|MCU config XSD00 - SDX bus disabled|
+|_sd1_enabled_*|R/W|1|MCU config XSD11 - SD1 bus enabled|
+|_sd1_enabled_*|R/W|0|MCU config XSD10 - SD1 bus disabled (factory default)|
+|_sdx_default_|R/W|A|MCU config XSDPA - At power-up, SDX bus routed to SDA and SD1 bus to SDB by default (factory default)|
+|_sdx_default_|R/W|B|MCU config XSDPB - At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
+|_sdx_routing_|R/W|A|MCU config XSDRA - SDX bus routed to SDA and SD1 bus to SDB (factory default)|
+|_sdx_routing_|R/W|B|MCU config XSDRB - SDX bus routed to SDB and SD1 bus to SDA|
 
 ### USB 1 - `/sys/class/stratopi/usb1/`
 
@@ -274,8 +270,8 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|config|W|S|MCU command XCCS - Persist the current configuration in the controller to be retained across power cycles|
-|config|W|R|MCU command XCCR - Restore the original factory configuration|
+|config|W|S|MCU command XCCS - Save the current configuration as default to be retained across power cycles|
+|config|W|R|MCU command XCCR - Restore the original factory configuration and default values|
 |fw_version|R|&lt;m&gt;.&lt;n&gt;/&lt;mc&gt;|MCU command XFW? - Read the firmware version, &lt;m&gt; is the major version number, &lt;n&gt; is the minor version number, &lt;mc&gt; is the model code. E.g. "4.0/07" (for firmware versions < 4.0 the model code is not returned)|
 |fw_install|W|<fw_file>|Set the MCU in boot-loader mode and upload the specified firmware HEX file|
 |fw_install_progress|R|&lt;p&gt;|Progress of the current firmware upload process as percentage|
