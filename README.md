@@ -101,8 +101,8 @@ Depending on the model you will find the available ones.
 
 You can read and/or write to these files to configure, monitor and control your Strato Pi.
 
-Files written in _italic_ are configuration parameters further detailed in the [Strato Pi Logic Controller Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).
-Configuration parameters marked with * are not persistent, i.e. their values are reset to default after a power cycle. To change the default values use the `/mcu/config` file (see below).
+Files written in _italic_ are configuration parameters further detailed in the [Strato Pi Logic Controller Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).    
+Configuration parameters marked with * are not persistent, i.e. their values are reset to default after a power cycle. To change the default values use the `/mcu/config` file (see below).    
 This allows to have a different configuration during the boot up phase, even after an abrupt shutdown. For instance, you may want a short watchdog timeout while your application is running, but it needs to be reset to a longer timeout when a power cycle occurs so that Strato Pi has the time to boot and restart your application handling the watchdog heartbeat.
 
 ### Buzzer - `/sys/class/stratopi/buzzer/`
