@@ -244,7 +244,7 @@ Examples:
 |sdx_enabled|R/W|2|MCU config XSD02 - SDX bus disabled, reset to enabled upon power cycle (FW ver. >= 4.4)|
 |_sd1_enabled_*|R/W|1|MCU config XSD11 - SD1 bus enabled|
 |_sd1_enabled_*|R/W|0|MCU config XSD10 - SD1 bus disabled (factory default)|
-|sd1_enabled|R/W|2|MCU config XSD12 - SDX bus enabled, reset to disabled upon power cycle (FW ver. >= 4.4)|
+|sd1_enabled|R/W|2|MCU config XSD12 - SD1 bus enabled, reset to disabled upon power cycle (FW ver. >= 4.4)|
 |_sdx_default_|R/W|A|MCU config XSDPA - At power-up, SDX bus routed to SDA and SD1 bus to SDB by default (factory default)|
 |_sdx_default_|R/W|B|MCU config XSDPB - At power-up, SDX bus routed to SDB and SD1 bus to SDA, by default|
 |_sdx_routing_|R/W|A|MCU config XSDRA - SDX bus routed to SDA and SD1 bus to SDB (factory default)|
