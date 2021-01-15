@@ -284,7 +284,7 @@ The `/sys/class/stratopi/mcu/fw_install` sysfs file allows to upload a new firmw
 
 To this end, output the content of the firmaware HEX file to `/sys/class/stratopi/mcu/fw_install` and then monitor the progress reading from `/sys/class/stratopi/mcu/fw_install_progress`. 
 
-The MCU will be set to boot-loader mode and the firware uploaded. When the progress reaches 100% you need to disable boot-loader mode by triggering a power-cycle, which is done by setting the shutdown line low (i.e. set `/sys/class/stratopi/power/down_enabled` to 0 or switch off the Raspberry Pi).
+The MCU will be set to boot-loader mode and the firmware uploaded. When the progress reaches 100% you need to disable boot-loader mode by triggering a power-cycle, which is done by setting the shutdown line low (i.e. set `/sys/class/stratopi/power/down_enabled` to 0 or switch off the Raspberry Pi).
 
 For troubleshooting or monitoring the firmware upload process check the kernel log in `/var/log/kern.log`.
 
@@ -297,4 +297,4 @@ Firmware upload axample:
     [...]
     $ cat /sys/class/stratopi/mcu/fw_install_progress
     100
-    $ sudo shutdown now 
+    $ sudo reboot
