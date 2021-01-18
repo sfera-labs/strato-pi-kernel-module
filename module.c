@@ -41,7 +41,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.5");
+MODULE_VERSION("1.6");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -155,6 +155,17 @@ static char toUpper(char c) {
 
 static bool startsWith(const char *str, const char *pre) {
 	return strncmp(pre, str, strlen(pre)) == 0;
+}
+
+static bool mcuMutexLock(void) {
+	uint8_t i;
+	for (i = 0; i < 20; i++) {
+		if (mutex_trylock(&mcuMutex)) {
+			return true;
+		}
+		msleep(1);
+	}
+	return false;
 }
 
 static int getGPIO(struct device* dev, struct device_attribute* attr) {
@@ -412,7 +423,7 @@ static ssize_t MCU_show(struct device* dev, struct device_attribute* attr,
 		prefixLen = 4;
 	}
 
-	if (!mutex_trylock(&mcuMutex)) {
+	if (!mcuMutexLock()) {
 		return -EBUSY;
 	}
 
@@ -461,7 +472,7 @@ static ssize_t MCU_store(struct device* dev, struct device_attribute* attr,
 	}
 	cmd[prefixLen + padd + i] = '\0';
 
-	if (!mutex_trylock(&mcuMutex)) {
+	if (!mcuMutexLock()) {
 		return -EBUSY;
 	}
 
@@ -546,7 +557,7 @@ static ssize_t fwInstall_store(struct device* dev,
 	char *eol;
 	char cmd[72 + 1];
 
-	if (!mutex_trylock(&mcuMutex)) {
+	if (!mcuMutexLock()) {
 		return -EBUSY;
 	}
 
