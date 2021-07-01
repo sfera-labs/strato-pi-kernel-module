@@ -1,6 +1,9 @@
 obj-m += stratopi.o
 
-stratopi-objs := module.o soft_uart/raspberry_soft_uart.o soft_uart/queue.o
+stratopi-objs := module.o
+stratopi-objs += soft_uart/raspberry_soft_uart.o
+stratopi-objs += soft_uart/queue.o
+stratopi-objs += atecc/atecc.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules

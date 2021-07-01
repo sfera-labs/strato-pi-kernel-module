@@ -21,6 +21,7 @@
 #include <linux/module.h>
 
 #include "soft_uart/raspberry_soft_uart.h"
+#include "atecc/atecc.h"
 
 #define MODEL_BASE		1
 #define MODEL_UPS		2
@@ -41,7 +42,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.6");
+MODULE_VERSION("1.7");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -80,6 +81,7 @@ static struct device *pSdDevice = NULL;
 static struct device *pUsb1Device = NULL;
 static struct device *pUsb2Device = NULL;
 static struct device *pMcuDevice = NULL;
+static struct device *pSecElDevice = NULL;
 
 static struct device_attribute devAttrBuzzerStatus;
 static struct device_attribute devAttrBuzzerBeep;
@@ -131,6 +133,7 @@ static struct device_attribute devAttrMcuConfig;
 static struct device_attribute devAttrMcuFwVersion;
 static struct device_attribute devAttrMcuFwInstall;
 static struct device_attribute devAttrMcuFwInstallProgress;
+static struct device_attribute devAttrSecElSerialNum;
 
 static DEFINE_MUTEX( mcuMutex);
 
@@ -1098,6 +1101,15 @@ static struct device_attribute devAttrMcuFwInstallProgress = {
 	.store = NULL,
 };
 
+static struct device_attribute devAttrSecElSerialNum = {
+	.attr = {
+		.name = "serial_num",
+		.mode = 0440,
+	},
+	.show = devAttrAteccSerial_show,
+	.store = NULL,
+};
+
 static void cleanup(void) {
 	if (pLedDevice && !IS_ERR(pLedDevice)) {
 		device_remove_file(pLedDevice, &devAttrLedStatus);
@@ -1228,6 +1240,12 @@ static void cleanup(void) {
 		device_remove_file(pMcuDevice, &devAttrMcuFwVersion);
 		device_remove_file(pMcuDevice, &devAttrMcuFwInstall);
 		device_remove_file(pMcuDevice, &devAttrMcuFwInstallProgress);
+
+		device_destroy(pDeviceClass, 0);
+	}
+
+	if (pSecElDevice && !IS_ERR(pSecElDevice)) {
+		device_remove_file(pSecElDevice, &devAttrSecElSerialNum);
 
 		device_destroy(pDeviceClass, 0);
 	}
@@ -1506,6 +1524,18 @@ static int __init stratopi_init(void) {
 		goto fail;
 	}
 
+	if (model_num >= MODEL_BASE_3) {
+		ateccAddDriver();
+
+		pSecElDevice = device_create(pDeviceClass, NULL, 0, NULL, "sec_elem");
+
+		if (IS_ERR(pSecElDevice)) {
+			printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+			result = -1;
+			goto fail;
+		}
+	}
+
 	if (pBuzzerDevice) {
 		result |= device_create_file(pBuzzerDevice, &devAttrBuzzerStatus);
 		result |= device_create_file(pBuzzerDevice, &devAttrBuzzerBeep);
@@ -1589,6 +1619,10 @@ static int __init stratopi_init(void) {
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstall);
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstallProgress);
 		}
+	}
+
+	if (pSecElDevice) {
+		result |= device_create_file(pSecElDevice, &devAttrSecElSerialNum);
 	}
 
 	if (result) {

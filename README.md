@@ -32,29 +32,16 @@ Make and install:
     make
     sudo make install
     
-Load the module:
+Compile the Device Tree and install it:
 
-    sudo insmod stratopi.ko
+    dtc -@ -Hepapr -I dts -O dtb -o stratopi.dtbo stratopi.dts
+    sudo cp stratopi.dtbo /boot/overlays/
 
-Check that it was loaded correctly from the kernel log:
+Add to `/boot/config.txt` the following line:
 
-    sudo tail -f /var/log/kern.log
+    dtoverlay=stratopi
 
-You will see something like:
-
-    ...
-    Sep  3 11:49:18 raspberrypi kernel: [   59.855723] stratopi: - | init
-    ...
-    Sep  3 11:49:18 raspberrypi kernel: [   60.043024] stratopi: - | ready
-    ...
-
-Optionally, to have the module automatically loaded at boot add `stratopi` in `/etc/modules`.
-
-E.g.:
-
-    sudo sh -c "echo 'stratopi' >> /etc/modules"
-
-Optionally, to be able to use the `/sys/` files not as super user, create a new group "stratopi" and set it as the module owner group by adding an udev rule:
+Optionally, to be able to use the `/sys/class/stratopi/` files not as super user, create a new group "stratopi" and set it as the module owner group by adding an udev rule:
 
     sudo groupadd stratopi
     sudo cp 99-stratopi.rules /etc/udev/rules.d/
@@ -63,13 +50,15 @@ and add your user to the group, e.g., for user "pi":
 
     sudo usermod -a -G stratopi pi
 
-then re-login to apply the group change and reload the module:
+Reboot:
 
-    su - $USER
-    sudo rmmod stratopi.ko
-    sudo insmod stratopi.ko
+    sudo reboot
     
-When loading the module, it performs an autodetect of the Strato Pi model. To bypass the autodetect you can load it passing the `model_num` parameter:
+When loading, the module performs an autodetect of the Strato Pi model. To bypass the autodetect (e.g. for testing the module without the Strato Pi hardware) you can specify the model number in the file `/etc/modprobe.d/stratopi.conf`, adding the following line:
+
+    options stratopi model_num=<n>
+
+Where `<n>` is set according to this table:
 
 |Hardware|`model_num`|
 |--------|:---------:|
@@ -84,13 +73,7 @@ When loading the module, it performs an autodetect of the Strato Pi model. To by
 
 For instance, for Strato Pi CM Duo:
 
-    sudo insmod stratopi.ko model_num=7
-    
-If you have the module automatically loaded at boot, you can pass the `model_num` parameter to the module by creating the file `/etc/modprobe.d/stratopi.conf` which contains the line
-
-    options stratopi model_num=<n>
-    
-Where `<n>` is set to the appropriate value.
+    options stratopi model_num=7
 
 ## Usage
 
@@ -267,6 +250,12 @@ Examples:
 |disabled|R/W|1|USB 2 disabled|
 |ok|R|0|USB 2 fault|
 |ok|R|1|USB 2 ok|
+
+### Secure Element - `/sys/class/stratopi/sec_elem/`
+
+|File|R/W|Value|Description|
+|----|:---:|:-:|-----------|
+|serial_num|R|9 1-byte HEX values|Secure element serial number|
 
 ### MCU - `/sys/class/stratopi/mcu/`
 

@@ -1,0 +1,21 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835";
+	
+	fragment@0 {
+		target = <&i2c_arm>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+			
+			atecc608a: atecc608a@60 {
+				compatible = "sferalabs,atecc";
+				reg = <0x60>;
+				status = "okay";
+			};
+		};
+	};
+};
