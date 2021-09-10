@@ -14,17 +14,19 @@ Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with f
 
 ## Compile and Install
 
-If you don't have git installed:
+Make sure your system is updated:
 
-    sudo apt install git
+    sudo apt update
+    sudo apt upgrade
+    sudo reboot
+    
+After reboot, install git and the Raspberry Pi kernel headers:
+
+    sudo apt install git raspberrypi-kernel-headers
 
 Clone this repo:
 
     git clone --depth 1 --recursive https://github.com/sfera-labs/strato-pi-kernel-module.git
-    
-Install the Raspberry Pi kernel headers:
-
-    sudo apt install raspberrypi-kernel-headers
 
 Make and install:
 
