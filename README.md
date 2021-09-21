@@ -66,7 +66,7 @@ Where `<n>` is set according to this table:
 |--------|:---------:|
 |Strato Pi Base rev. < 3.0|1|
 |Strato Pi UPS rev. < 3.0|2|
-|Strato Pi CAN|3|
+|Strato Pi CAN rev. < 2.0|3|
 |Strato Pi CM|4|
 |Strato Pi Base rev. ≥ 3.0|5|
 |Strato Pi UPS rev. ≥ 3.0|6|
