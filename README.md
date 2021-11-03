@@ -14,6 +14,8 @@ Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with f
 
 ## Compile and Install
 
+*For installation on Ubuntu [read this](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/kernel-modules-ubuntu.md).*
+
 Make sure your system is updated:
 
     sudo apt update
