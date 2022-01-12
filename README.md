@@ -281,7 +281,7 @@ The MCU will be set to boot-loader mode and the firmware uploaded. When the prog
 
 For troubleshooting or monitoring the firmware upload process check the kernel log in `/var/log/kern.log`.
 
-Firmware upload axample:
+Firmware upload axample (where `firmware.hex` is the name of the firmaware HEX file to install):
 
     $ cat firmware.hex > /sys/class/stratopi/mcu/fw_install &
     [1] 14918
