@@ -42,7 +42,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.7");
+MODULE_VERSION("1.8");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -1357,12 +1357,8 @@ static bool tryDetectFwVerAndModelAs(int modelTry) {
 
 static struct file *file_open(const char *path, int flags, int rights) {
 	struct file *filp = NULL;
-	mm_segment_t oldfs;
 	int err = 0;
-	oldfs = get_fs();
-	set_fs(KERNEL_DS);
 	filp = filp_open(path, flags, rights);
-	set_fs(oldfs);
 	if (IS_ERR(filp)) {
 		err = PTR_ERR(filp);
 		return NULL;
@@ -1376,12 +1372,8 @@ static void file_close(struct file *file) {
 
 static int file_read(struct file *file, loff_t offset, unsigned char *buf,
 		size_t count) {
-	mm_segment_t oldfs;
 	int ret;
-	oldfs = get_fs();
-	set_fs(KERNEL_DS);
 	ret = kernel_read(file, buf, count, &offset);
-	set_fs(oldfs);
 	return ret;
 }
 
