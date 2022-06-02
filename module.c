@@ -42,7 +42,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.8");
+MODULE_VERSION("1.9");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -1485,7 +1485,7 @@ static int __init stratopi_init(void) {
 			goto fail;
 		}
 
-		if (model_num == MODEL_CAN) {
+		if (model_num == MODEL_CAN || model_num == MODEL_CAN_2) {
 			pRelayDevice = device_create(pDeviceClass, NULL, 0, NULL, "relay");
 
 			if (IS_ERR(pRelayDevice)) {
