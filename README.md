@@ -81,6 +81,10 @@ For instance, for Strato Pi CM Duo:
 
     options stratopi model_num=7
 
+Reboot after `/etc/modprobe.d/stratopi.conf` has been modified:
+
+    sudo reboot
+
 ## Usage
 
 After loading the module, you will find all the available devices under the directory `/sys/class/stratopi/`.
