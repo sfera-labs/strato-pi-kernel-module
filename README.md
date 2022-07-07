@@ -57,7 +57,9 @@ and add your user to the group, e.g., for user "pi":
 Reboot:
 
     sudo reboot
-    
+
+### Model detection
+
 When loading, the module performs an autodetect of the Strato Pi model. To bypass the autodetect (e.g. for testing the module without the Strato Pi hardware) you can specify the model number in the file `/etc/modprobe.d/stratopi.conf`, adding the following line:
 
     options stratopi model_num=<n>
