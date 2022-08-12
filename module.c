@@ -31,6 +31,7 @@
 #define MODEL_UPS_3		6
 #define MODEL_CMDUO		7
 #define MODEL_CAN_2		8
+#define MODEL_CM_2		9
 
 #define SOFT_UART_RX_BUFF_SIZE 	100
 
@@ -1282,7 +1283,7 @@ static void setGPIO(void) {
 		GPIO_BUTTON = 25;
 		GPIO_SOFTSERIAL_TX = 23;
 		GPIO_SOFTSERIAL_RX = 24;
-	} else if (model_num == MODEL_CMDUO) {
+	} else if (model_num == MODEL_CMDUO || model_num == MODEL_CM_2) {
 		GPIO_WATCHDOG_ENABLE = 39;
 		GPIO_WATCHDOG_HEARTBEAT = 32;
 		GPIO_WATCHDOG_EXPIRED = 17;
@@ -1454,7 +1455,7 @@ static int __init stratopi_init(void) {
 		goto fail;
 	}
 
-	if (model_num == MODEL_CM || model_num == MODEL_CMDUO) {
+	if (model_num == MODEL_CM || model_num == MODEL_CMDUO || model_num == MODEL_CM_2) {
 		pLedDevice = device_create(pDeviceClass, NULL, 0, NULL, "led");
 		pButtonDevice = device_create(pDeviceClass, NULL, 0, NULL, "button");
 
@@ -1464,13 +1465,22 @@ static int __init stratopi_init(void) {
 			goto fail;
 		}
 
-		if (model_num == MODEL_CMDUO) {
+		if (model_num == MODEL_CMDUO || model_num == MODEL_CM_2) {
 			pExpBusDevice = device_create(pDeviceClass, NULL, 0, NULL, "expbus");
-			pSdDevice = device_create(pDeviceClass, NULL, 0, NULL, "sd");
 			pUsb1Device = device_create(pDeviceClass, NULL, 0, NULL, "usb1");
 			pUsb2Device = device_create(pDeviceClass, NULL, 0, NULL, "usb2");
 
-			if (IS_ERR(pExpBusDevice) || IS_ERR(pSdDevice) || IS_ERR(pUsb1Device) || IS_ERR(pUsb2Device)) {
+			if (IS_ERR(pExpBusDevice) || IS_ERR(pUsb1Device) || IS_ERR(pUsb2Device)) {
+				printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+				result = -1;
+				goto fail;
+			}
+		}
+
+		if (model_num == MODEL_CMDUO) {
+			pSdDevice = device_create(pDeviceClass, NULL, 0, NULL, "sd");
+
+			if (IS_ERR(pSdDevice)) {
 				printk(KERN_ALERT "stratopi: * | failed to create devices\n");
 				result = -1;
 				goto fail;
@@ -1607,7 +1617,8 @@ static int __init stratopi_init(void) {
 	if (pMcuDevice) {
 		result |= device_create_file(pMcuDevice, &devAttrMcuConfig);
 		result |= device_create_file(pMcuDevice, &devAttrMcuFwVersion);
-		if (model_num == MODEL_CMDUO || model_num == MODEL_UPS_3 || model_num == MODEL_BASE_3 || model_num == MODEL_CAN_2) {
+		if (model_num == MODEL_CMDUO || model_num == MODEL_UPS_3 || model_num == MODEL_BASE_3
+				|| model_num == MODEL_CAN_2 || model_num == MODEL_CM_2) {
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstall);
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstallProgress);
 		}
