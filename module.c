@@ -1,7 +1,7 @@
 /*
  * stratopi
  *
- *     Copyright (C) 2019-2020 Sfera Labs S.r.l.
+ *     Copyright (C) 2019-2022 Sfera Labs S.r.l.
  *
  *     For information, see the Strato Pi web site:
  *     https://www.sferalabs.cc/strato-pi
