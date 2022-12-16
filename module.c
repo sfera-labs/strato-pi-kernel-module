@@ -172,7 +172,7 @@ static bool mcuMutexLock(void) {
 	return false;
 }
 
-static int getGPIO(struct device* dev, struct device_attribute* attr) {
+static int getGPIO(struct device *dev, struct device_attribute *attr) {
 	if (dev == pBuzzerDevice) {
 		return GPIO_BUZZER;
 	} else if (dev == pWatchdogDevice) {
@@ -215,7 +215,7 @@ static int getGPIO(struct device* dev, struct device_attribute* attr) {
 	return -1;
 }
 
-static int getMcuCmd(struct device* dev, struct device_attribute* attr,
+static int getMcuCmd(struct device *dev, struct device_attribute *attr,
 		char *cmd) {
 	if (dev == pRs485Device) {
 		if (attr == &devAttrRs485Mode) {
@@ -315,7 +315,7 @@ static int getMcuCmd(struct device* dev, struct device_attribute* attr,
 	return -1;
 }
 
-static ssize_t GPIO_show(struct device* dev, struct device_attribute* attr,
+static ssize_t GPIO_show(struct device *dev, struct device_attribute *attr,
 		char *buf) {
 	int gpio;
 	gpio = getGPIO(dev, attr);
@@ -325,7 +325,7 @@ static ssize_t GPIO_show(struct device* dev, struct device_attribute* attr,
 	return sprintf(buf, "%d\n", gpio_get_value(gpio));
 }
 
-static ssize_t GPIO_store(struct device* dev, struct device_attribute* attr,
+static ssize_t GPIO_store(struct device *dev, struct device_attribute *attr,
 		const char *buf, size_t count) {
 	bool val;
 	int gpio = getGPIO(dev, attr);
@@ -350,8 +350,8 @@ static ssize_t GPIO_store(struct device* dev, struct device_attribute* attr,
 	return count;
 }
 
-static ssize_t GPIOBlink_store(struct device* dev,
-		struct device_attribute* attr, const char *buf, size_t count) {
+static ssize_t GPIOBlink_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count) {
 	int i;
 	long on = 0;
 	long off = 0;
@@ -396,7 +396,7 @@ static bool softUartSendAndWait(const char *cmd, int cmdLen, int respLen,
 	raspberry_soft_uart_open(NULL);
 	softUartRxBuffIdx = 0;
 	if (print) {
-		printk(KERN_INFO "stratopi: - | soft uart >>> %s\n", cmd);;
+		pr_info("stratopi: - | soft uart >>> %s\n", cmd);
 	}
 	raspberry_soft_uart_send_string(cmd, cmdLen);
 	while (softUartRxBuffIdx < respLen && waitTime < timeout) {
@@ -406,12 +406,12 @@ static bool softUartSendAndWait(const char *cmd, int cmdLen, int respLen,
 	raspberry_soft_uart_close();
 	softUartRxBuff[softUartRxBuffIdx] = '\0';
 	if (print) {
-		printk(KERN_INFO "stratopi: - | soft uart <<< %s\n", softUartRxBuff);;
+		pr_info("stratopi: - | soft uart <<< %s\n", softUartRxBuff);
 	}
 	return softUartRxBuffIdx == respLen;
 }
 
-static ssize_t MCU_show(struct device* dev, struct device_attribute* attr,
+static ssize_t MCU_show(struct device *dev, struct device_attribute *attr,
 		char *buf) {
 	long val;
 	ssize_t ret;
@@ -433,7 +433,7 @@ static ssize_t MCU_show(struct device* dev, struct device_attribute* attr,
 
 	if (!softUartSendAndWait(cmd, cmdLen, respLen, 300, false)) {
 		ret = -EIO;
-	} else if (kstrtol((const char *) (softUartRxBuff + prefixLen), 10, &val)
+	} else if (kstrtol((const char*) (softUartRxBuff + prefixLen), 10, &val)
 			== 0) {
 		ret = sprintf(buf, "%ld\n", val);
 	} else {
@@ -444,7 +444,7 @@ static ssize_t MCU_show(struct device* dev, struct device_attribute* attr,
 	return ret;
 }
 
-static ssize_t MCU_store(struct device* dev, struct device_attribute* attr,
+static ssize_t MCU_store(struct device *dev, struct device_attribute *attr,
 		const char *buf, size_t count) {
 	ssize_t ret = count;
 	size_t len = count;
@@ -515,13 +515,13 @@ static int hex2int(char ch) {
 static int nextByte(const char *buf, int offset) {
 	int h, l;
 	if (offset >= strlen(buf) - 1) {
-		printk(KERN_ALERT "stratopi: * | invalid hex file - reached end of line\n");
+		pr_alert("stratopi: * | invalid hex file - reached end of line\n");
 		return -1;
 	}
 	h = hex2int(buf[offset]);
 	l = hex2int(buf[offset + 1]);
 	if (h < 0 || l < 0) {
-		printk(KERN_ALERT "stratopi: * | invalid hex file - illegal character\n");
+		pr_alert("stratopi: * | invalid hex file - illegal character\n");
 		return -1;
 	}
 	return (h << 4) | l;
@@ -543,18 +543,18 @@ static bool fwSendCmd(int addr, char *cmd, int cmdLen, int respLen,
 	cmd[4] = addr & 0xff;
 	fwCmdChecksum(cmd, 72);
 	if (!softUartSendAndWait(cmd, cmdLen, respLen, 1000, false)) {
-		printk(KERN_ALERT "stratopi: * | FW cmd error 1\n");
+		pr_alert("stratopi: * | FW cmd error 1\n");
 		return false;
 	}
-	if (!startsWith((const char *) softUartRxBuff, respPrefix)) {
-		printk(KERN_ALERT "stratopi: * | FW cmd error 2\n");
+	if (!startsWith((const char*) softUartRxBuff, respPrefix)) {
+		pr_alert("stratopi: * | FW cmd error 2\n");
 		return false;
 	}
 	return true;
 }
 
-static ssize_t fwInstall_store(struct device* dev,
-		struct device_attribute* attr, const char *buf, size_t bufLen) {
+static ssize_t fwInstall_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t bufLen) {
 	uint8_t data[FW_MAX_DATA_BYTES_PER_LINE];
 	int i, buff_i, count, addrH, addrL, addr, type, checksum, baseAddr = 0;
 	bool eof = false;
@@ -568,7 +568,7 @@ static ssize_t fwInstall_store(struct device* dev,
 	fwProgress = 0;
 
 	if (startsWith(buf, ":020000040000FA")) {
-		printk(KERN_INFO "stratopi: - | loading firmware file...\n");
+		pr_info("stratopi: - | loading firmware file...\n");
 		fwLineIdx = 0;
 		fwMaxAddr = 0;
 		for (i = 0; i < FW_MAX_SIZE; i++) {
@@ -588,7 +588,7 @@ static ssize_t fwInstall_store(struct device* dev,
 			if (eol == NULL) {
 				strcpy(fwLine, buf + buff_i);
 				fwLineIdx = bufLen - buff_i;
-				printk(KERN_INFO "stratopi: - | waiting for data...\n");
+				pr_info("stratopi: - | waiting for data...\n");
 				mutex_unlock(&mcuMutex);
 				return bufLen;
 			}
@@ -599,7 +599,7 @@ static ssize_t fwInstall_store(struct device* dev,
 		fwLine[i + fwLineIdx] = '\0';
 		fwLineIdx = 0;
 
-		// printk(KERN_INFO "stratopi: - | line - %s\n", fwLine);
+		// pr_info("stratopi: - | line - %s\n", fwLine);
 
 		count = nextByte(fwLine, 0);
 		addrH = nextByte(fwLine, 2);
@@ -620,14 +620,14 @@ static ssize_t fwInstall_store(struct device* dev,
 		}
 		checksum += nextByte(fwLine, 8 + (i * 2));
 		if ((checksum & 0xff) != 0) {
-			printk(KERN_ALERT "stratopi: * | invalid hex file - checksum error\n");
+			pr_alert("stratopi: * | invalid hex file - checksum error\n");
 			mutex_unlock(&mcuMutex);
 			return -EINVAL;
 		}
 
 		if (type == 0) {
 			addr = ((addrH << 8) | addrL) + baseAddr;
-			// printk(KERN_INFO "stratopi: - | addr %d\n", addr);
+			// pr_info("stratopi: - | addr %d\n", addr);
 			if (addr + count < FW_MAX_SIZE) {
 				for (i = 0; i < count; i++) {
 					fwBytes[addr + i] = data[i];
@@ -645,41 +645,43 @@ static ssize_t fwInstall_store(struct device* dev,
 		} else if (type == 4) {
 			baseAddr = ((data[0] << 8) | data[1]) << 16;
 		} else {
-			printk(KERN_INFO "stratopi: - | ignored record type %d\n", type);;
+			pr_info("stratopi: - | ignored record type %d\n", type);
 		}
 	}
 
 	if (!eof) {
-		printk(KERN_INFO "stratopi: - | waiting for data...\n");
+		pr_info("stratopi: - | waiting for data...\n");
 		mutex_unlock(&mcuMutex);
 		return bufLen;
 	}
 
 	if (fwMaxAddr < 0x05be) {
-		printk(KERN_ALERT "stratopi: * | invalid hex file - no model\n");
+		pr_alert("stratopi: * | invalid hex file - no model\n");
 		mutex_unlock(&mcuMutex);
 		return -EINVAL;
 	}
 
 	if (model_num != fwBytes[0x05be]) {
-		printk(KERN_ALERT "stratopi: * | invalid hex file - missmatching model %d != %d\n", model_num, fwBytes[0x05be]);
+		pr_alert(
+				"stratopi: * | invalid hex file - missmatching model %d != %d\n",
+				model_num, fwBytes[0x05be]);
 		mutex_unlock(&mcuMutex);
 		return -EINVAL;
 	}
 
-	printk(KERN_INFO "stratopi: - | enabling boot loader...\n");
+	pr_info("stratopi: - | enabling boot loader...\n");
 	if (!softUartSendAndWait("XBOOT", 5, 7, 300, true)) {
-		printk(KERN_ALERT "stratopi: * | boot loader enable error 1\n");
+		pr_alert("stratopi: * | boot loader enable error 1\n");
 		mutex_unlock(&mcuMutex);
 		return -EIO;
 	}
-	if (strcmp("XBOOTOK", (const char *) softUartRxBuff) != 0
-			&& strcmp("XBOOTIN", (const char *) softUartRxBuff) != 0) {
-		printk(KERN_ALERT "stratopi: * | boot loader enable error 2\n");
+	if (strcmp("XBOOTOK", (const char*) softUartRxBuff) != 0
+			&& strcmp("XBOOTIN", (const char*) softUartRxBuff) != 0) {
+		pr_alert("stratopi: * | boot loader enable error 2\n");
 		mutex_unlock(&mcuMutex);
 		return -EIO;
 	}
-	printk(KERN_INFO "stratopi: - | boot loader enabled\n");
+	pr_info("stratopi: - | boot loader enabled\n");
 
 	gpio_set_value(GPIO_SHUTDOWN, 1);
 
@@ -691,7 +693,7 @@ static ssize_t fwInstall_store(struct device* dev,
 
 	fwMaxAddr += 64;
 
-	printk(KERN_INFO "stratopi: - | invalidating FW...\n");
+	pr_info("stratopi: - | invalidating FW...\n");
 	for (i = 0; i < 64; i++) {
 		cmd[6 + i] = 0xff;
 	}
@@ -700,43 +702,43 @@ static ssize_t fwInstall_store(struct device* dev,
 		return -EIO;
 	}
 
-	printk(KERN_INFO "stratopi: - | writing FW...\n");
+	pr_info("stratopi: - | writing FW...\n");
 	for (i = 0; i <= fwMaxAddr - 0x0600; i++) {
 		addr = 0x0600 + i;
 		cmd[6 + (i % 64)] = fwBytes[addr];
 		if (i % 64 == 63) {
-			// printk(KERN_INFO "stratopi: - | writing addr %d\n", addr - 63);
+			// pr_info("stratopi: - | writing addr %d\n", addr - 63);
 			if (!fwSendCmd(addr - 63, cmd, 72, 5, "XBWOK")) {
 				mutex_unlock(&mcuMutex);
 				return -EIO;
 			}
 			fwProgress = i * 50 / (fwMaxAddr - 0x0600);
-			printk(KERN_INFO "stratopi: - | progress %d%%\n", fwProgress);;
+			pr_info("stratopi: - | progress %d%%\n", fwProgress);
 		}
 	}
 
-	printk(KERN_INFO "stratopi: - | checking FW...\n");
+	pr_info("stratopi: - | checking FW...\n");
 	cmd[2] = 'R';
 	for (i = 0; i <= fwMaxAddr - 0x0600; i++) {
 		addr = 0x0600 + i;
 		cmd[6 + (i % 64)] = fwBytes[addr];
 		if (i % 64 == 63) {
-			// printk(KERN_INFO "stratopi: - | reading addr %d\n", addr - 63);
+			// pr_info("stratopi: - | reading addr %d\n", addr - 63);
 			if (!fwSendCmd(addr - 63, cmd, 6, 72, "XBR")) {
 				mutex_unlock(&mcuMutex);
 				return -EIO;
 			}
-			if (memcmp(cmd, (const char *) softUartRxBuff, 72) != 0) {
-				printk(KERN_ALERT "stratopi: * | FW check error\n");
+			if (memcmp(cmd, (const char*) softUartRxBuff, 72) != 0) {
+				pr_alert("stratopi: * | FW check error\n");
 				mutex_unlock(&mcuMutex);
 				return -EIO;
 			}
 			fwProgress = 50 + i * 49 / (fwMaxAddr - 0x0600);
-			printk(KERN_INFO "stratopi: - | progress %d%%\n", fwProgress);;
+			pr_info("stratopi: - | progress %d%%\n", fwProgress);
 		}
 	}
 
-	printk(KERN_INFO "stratopi: - | validating FW...\n");
+	pr_info("stratopi: - | validating FW...\n");
 	cmd[2] = 'W';
 	for (i = 0; i < 64; i++) {
 		cmd[6 + i] = fwBytes[0x05C0 + i];
@@ -747,16 +749,16 @@ static ssize_t fwInstall_store(struct device* dev,
 	}
 
 	fwProgress = 100;
-	printk(KERN_INFO "stratopi: - | progress %d%%\n", fwProgress);
+	pr_info("stratopi: - | progress %d%%\n", fwProgress);
 
-	printk(KERN_INFO "stratopi: - | firmware installed. Waiting for shutdown...\n");
+	pr_info("stratopi: - | firmware installed. Waiting for shutdown...\n");
 
 	mutex_unlock(&mcuMutex);
 	return bufLen;
 }
 
-static ssize_t fwInstallProgress_show(struct device* dev,
-		struct device_attribute* attr, char *buf) {
+static ssize_t fwInstallProgress_show(struct device *dev,
+		struct device_attribute *attr, char *buf) {
 	return sprintf(buf, "%d\n", fwProgress);
 }
 
@@ -1266,7 +1268,7 @@ static void cleanup(void) {
 
 	if (softUartInitialized) {
 		if (!raspberry_soft_uart_finalize()) {
-			printk(KERN_ALERT "stratopi: * | error finalizing soft UART\n");;
+			pr_alert("stratopi: * | error finalizing soft UART\n");
 		}
 	}
 
@@ -1329,15 +1331,15 @@ static bool getFwVerAndModelNumber(int modelTry) {
 			&& softUartRxBuffIdx < 6) {
 		return false;
 	}
-	fwVerMaj = simple_strtol((const char *) (softUartRxBuff + 3), &end, 10);
+	fwVerMaj = simple_strtol((const char*) (softUartRxBuff + 3), &end, 10);
 	fwVerMin = simple_strtol(end + 1, &end, 10);
-	printk(KERN_INFO "stratopi: - | FW version %d.%d\n", fwVerMaj, fwVerMin);
+	pr_info("stratopi: - | FW version %d.%d\n", fwVerMaj, fwVerMin);
 	if (fwVerMaj < 4) {
-		if (modelTry == 4 && fwVerMin >= 5 && softUartRxBuffIdx == 6) {
-			model_num = 4;
+		if (modelTry == MODEL_CM && fwVerMin >= 5 && softUartRxBuffIdx == 6) {
+			model_num = MODEL_CM;
 			return true;
 		}
-		printk(KERN_ALERT "stratopi: * | FW version not supported\n");
+		pr_alert("stratopi: * | FW version not supported\n");
 		return false;
 	}
 	return (kstrtoint(end + 1, 10, &model_num) == 0);
@@ -1356,7 +1358,7 @@ static bool tryDetectFwVerAndModelAs(int modelTry) {
 	return true;
 }
 
-static struct file *file_open(const char *path, int flags, int rights) {
+static struct file* file_open(const char *path, int flags, int rights) {
 	struct file *filp = NULL;
 	int err = 0;
 	filp = filp_open(path, flags, rights);
@@ -1384,17 +1386,17 @@ static bool isComputeModule(void) {
 	unsigned char buff[29];
 	f = file_open("/proc/device-tree/model", O_RDONLY, 0);
 	if (!f) {
-		printk(KERN_ALERT "stratopi: * | error opening file /proc/device-tree/model\n");
+		pr_alert("stratopi: * | error opening file /proc/device-tree/model\n");
 		return false;
 	}
 	res = file_read(f, 0, buff, 28);
 	file_close(f);
 	if (res < 28) {
-		printk(KERN_ALERT "stratopi: * | error reading file /proc/device-tree/model\n");
+		pr_alert("stratopi: * | error reading file /proc/device-tree/model\n");
 		return false;
 	}
 	buff[28] = '\0';
-	printk(KERN_INFO "stratopi: - | RPi model: %s\n", buff);
+	pr_info("stratopi: - | RPi model: %s\n", buff);
 	return (strstr(buff, "Compute Module") != NULL);
 }
 
@@ -1414,12 +1416,12 @@ static int __init stratopi_init(void) {
 	int result = 0;
 	softUartInitialized = false;
 
-	printk(KERN_INFO "stratopi: - | init\n");
+	pr_info("stratopi: - | init\n");
 
 	mutex_init(&mcuMutex);
 
 	if (!raspberry_soft_uart_set_rx_callback(&softUartRxCallback)) {
-		printk(KERN_ALERT "stratopi: * | error setting soft UART callback\n");
+		pr_alert("stratopi: * | error setting soft UART callback\n");
 		result = -1;
 		goto fail;
 	}
@@ -1427,20 +1429,20 @@ static int __init stratopi_init(void) {
 	if (model_num > 0) {
 		setGPIO();
 		if (!softUartInit()) {
-			printk(KERN_ALERT "stratopi: * | error initializing soft UART\n");
+			pr_alert("stratopi: * | error initializing soft UART\n");
 			result = -1;
 			goto fail;
 		}
 	} else {
-		printk(KERN_INFO "stratopi: - | detecting model...\n");
+		pr_info("stratopi: - | detecting model...\n");
 		if (!detectFwVerAndModel()) {
-			printk(KERN_ALERT "stratopi: * | error detecting model\n");
+			pr_alert("stratopi: * | error detecting model\n");
 			result = -1;
 			goto fail;
 		}
 	}
 
-	printk(KERN_INFO "stratopi: - | model=%d\n", model_num);
+	pr_info("stratopi: - | model=%d\n", model_num);
 
 	if (model_num == MODEL_CM) {
 		fwVerMaj = 3;
@@ -1450,28 +1452,31 @@ static int __init stratopi_init(void) {
 
 	pDeviceClass = class_create(THIS_MODULE, "stratopi");
 	if (IS_ERR(pDeviceClass)) {
-		printk(KERN_ALERT "stratopi: * | failed to create device class\n");
+		pr_alert("stratopi: * | failed to create device class\n");
 		result = -1;
 		goto fail;
 	}
 
-	if (model_num == MODEL_CM || model_num == MODEL_CMDUO || model_num == MODEL_CM_2) {
+	if (model_num == MODEL_CM || model_num == MODEL_CMDUO
+			|| model_num == MODEL_CM_2) {
 		pLedDevice = device_create(pDeviceClass, NULL, 0, NULL, "led");
 		pButtonDevice = device_create(pDeviceClass, NULL, 0, NULL, "button");
 
 		if (IS_ERR(pLedDevice) || IS_ERR(pButtonDevice)) {
-			printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+			pr_alert("stratopi: * | failed to create devices\n");
 			result = -1;
 			goto fail;
 		}
 
 		if (model_num == MODEL_CMDUO || model_num == MODEL_CM_2) {
-			pExpBusDevice = device_create(pDeviceClass, NULL, 0, NULL, "expbus");
+			pExpBusDevice = device_create(pDeviceClass, NULL, 0, NULL,
+					"expbus");
 			pUsb1Device = device_create(pDeviceClass, NULL, 0, NULL, "usb1");
 			pUsb2Device = device_create(pDeviceClass, NULL, 0, NULL, "usb2");
 
-			if (IS_ERR(pExpBusDevice) || IS_ERR(pUsb1Device) || IS_ERR(pUsb2Device)) {
-				printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+			if (IS_ERR(pExpBusDevice) || IS_ERR(pUsb1Device)
+					|| IS_ERR(pUsb2Device)) {
+				pr_alert("stratopi: * | failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
@@ -1481,7 +1486,7 @@ static int __init stratopi_init(void) {
 			pSdDevice = device_create(pDeviceClass, NULL, 0, NULL, "sd");
 
 			if (IS_ERR(pSdDevice)) {
-				printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+				pr_alert("stratopi: * | failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
@@ -1490,7 +1495,7 @@ static int __init stratopi_init(void) {
 		pBuzzerDevice = device_create(pDeviceClass, NULL, 0, NULL, "buzzer");
 
 		if (IS_ERR(pBuzzerDevice)) {
-			printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+			pr_alert("stratopi: * | failed to create devices\n");
 			result = -1;
 			goto fail;
 		}
@@ -1499,7 +1504,7 @@ static int __init stratopi_init(void) {
 			pRelayDevice = device_create(pDeviceClass, NULL, 0, NULL, "relay");
 
 			if (IS_ERR(pRelayDevice)) {
-				printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+				pr_alert("stratopi: * | failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
@@ -1508,7 +1513,7 @@ static int __init stratopi_init(void) {
 			pUpsDevice = device_create(pDeviceClass, NULL, 0, NULL, "ups");
 
 			if (IS_ERR(pUpsDevice)) {
-				printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+				pr_alert("stratopi: * | failed to create devices\n");
 				result = -1;
 				goto fail;
 			}
@@ -1520,8 +1525,9 @@ static int __init stratopi_init(void) {
 	pRs485Device = device_create(pDeviceClass, NULL, 0, NULL, "rs485");
 	pMcuDevice = device_create(pDeviceClass, NULL, 0, NULL, "mcu");
 
-	if (IS_ERR(pRs485Device) || IS_ERR(pWatchdogDevice) || IS_ERR(pPowerDevice) || IS_ERR(pMcuDevice)) {
-		printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+	if (IS_ERR(pRs485Device) || IS_ERR(pWatchdogDevice) || IS_ERR(pPowerDevice)
+			|| IS_ERR(pMcuDevice)) {
+		pr_alert("stratopi: * | failed to create devices\n");
 		result = -1;
 		goto fail;
 	}
@@ -1532,7 +1538,7 @@ static int __init stratopi_init(void) {
 		pSecElDevice = device_create(pDeviceClass, NULL, 0, NULL, "sec_elem");
 
 		if (IS_ERR(pSecElDevice)) {
-			printk(KERN_ALERT "stratopi: * | failed to create devices\n");
+			pr_alert("stratopi: * | failed to create devices\n");
 			result = -1;
 			goto fail;
 		}
@@ -1545,13 +1551,17 @@ static int __init stratopi_init(void) {
 
 	if (pWatchdogDevice) {
 		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogEnabled);
-		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogHeartbeat);
+		result |= device_create_file(pWatchdogDevice,
+				&devAttrWatchdogHeartbeat);
 		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogExpired);
-		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogEnableMode);
+		result |= device_create_file(pWatchdogDevice,
+				&devAttrWatchdogEnableMode);
 		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogTimeout);
-		result |= device_create_file(pWatchdogDevice, &devAttrWatchdogDownDelay);
+		result |= device_create_file(pWatchdogDevice,
+				&devAttrWatchdogDownDelay);
 		if (pSdDevice) {
-			result |= device_create_file(pWatchdogDevice, &devAttrWatchdogSdSwitch);
+			result |= device_create_file(pWatchdogDevice,
+					&devAttrWatchdogSdSwitch);
 		}
 	}
 
@@ -1617,10 +1627,12 @@ static int __init stratopi_init(void) {
 	if (pMcuDevice) {
 		result |= device_create_file(pMcuDevice, &devAttrMcuConfig);
 		result |= device_create_file(pMcuDevice, &devAttrMcuFwVersion);
-		if (model_num == MODEL_CMDUO || model_num == MODEL_UPS_3 || model_num == MODEL_BASE_3
+		if (model_num == MODEL_CMDUO || model_num == MODEL_UPS_3
+				|| model_num == MODEL_BASE_3
 				|| model_num == MODEL_CAN_2 || model_num == MODEL_CM_2) {
 			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstall);
-			result |= device_create_file(pMcuDevice, &devAttrMcuFwInstallProgress);
+			result |= device_create_file(pMcuDevice,
+					&devAttrMcuFwInstallProgress);
 		}
 	}
 
@@ -1629,7 +1641,7 @@ static int __init stratopi_init(void) {
 	}
 
 	if (result) {
-		printk(KERN_ALERT "stratopi: * | failed to create device files\n");
+		pr_alert("stratopi: * | failed to create device files\n");
 		result = -1;
 		goto fail;
 	}
@@ -1711,22 +1723,22 @@ static int __init stratopi_init(void) {
 	}
 
 	if (result) {
-		printk(KERN_ALERT "stratopi: * | error setting up GPIOs\n");
+		pr_alert("stratopi: * | error setting up GPIOs\n");
 		goto fail;
 	}
 
-	printk(KERN_INFO "stratopi: - | ready\n");
+	pr_info("stratopi: - | ready\n");
 	return 0;
 
 	fail:
-	printk(KERN_ALERT "stratopi: * | init failed\n");
+	pr_alert("stratopi: * | init failed\n");
 	cleanup();
 	return result;
 }
 
 static void __exit stratopi_exit(void) {
 	cleanup();
-	printk(KERN_INFO "stratopi: - | exit\n");
+	pr_info("stratopi: - | exit\n");
 }
 
 module_init( stratopi_init);
