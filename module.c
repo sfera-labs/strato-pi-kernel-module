@@ -22,6 +22,8 @@
 
 #include "soft_uart/raspberry_soft_uart.h"
 #include "atecc/atecc.h"
+#include "commons/commons.h"
+#include "gpio/gpio.h"
 
 #define MODEL_BASE		1
 #define MODEL_UPS		2
@@ -52,24 +54,6 @@ MODULE_PARM_DESC(model_num, " Strato Pi model number");
 static int model_num_fallback = -1;
 module_param( model_num_fallback, int, S_IRUGO);
 MODULE_PARM_DESC(model_num_fallback, " Strato Pi model number auto-detect fail fallback");
-
-int GPIO_BUZZER;
-int GPIO_WATCHDOG_ENABLE;
-int GPIO_WATCHDOG_HEARTBEAT;
-int GPIO_WATCHDOG_EXPIRED;
-int GPIO_SHUTDOWN;
-int GPIO_UPS_BATTERY;
-int GPIO_RELAY;
-int GPIO_LED;
-int GPIO_BUTTON;
-int GPIO_I2CEXP_ENABLE;
-int GPIO_I2CEXP_FEEDBACK;
-int GPIO_SOFTSERIAL_TX;
-int GPIO_SOFTSERIAL_RX;
-int GPIO_USB1_DISABLE;
-int GPIO_USB1_FAULT;
-int GPIO_USB2_DISABLE;
-int GPIO_USB2_FAULT;
 
 static struct class *pDeviceClass;
 
@@ -119,6 +103,9 @@ static struct device_attribute devAttrLedStatus;
 static struct device_attribute devAttrLedBlink;
 
 static struct device_attribute devAttrButtonStatus;
+static struct device_attribute devAttrButtonStatusDeb;
+static struct device_attribute devAttrButtonStatusDebMs;
+static struct device_attribute devAttrButtonStatusDebCnt;
 
 static struct device_attribute devAttrExpBusEnabled;
 static struct device_attribute devAttrExpBusAux;
@@ -142,6 +129,90 @@ static struct device_attribute devAttrSecElSerialNum;
 
 static DEFINE_MUTEX( mcuMutex);
 
+static struct GpioBean gpioBuzzer = {
+	.name = "stratopi_buzzer",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct GpioBean gpioWatchdogEnable = {
+	.name = "stratopi_watchdog_enable",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct GpioBean gpioWatchdogHeartbeat = {
+	.name = "stratopi_watchdog_heartbeat",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct DebouncedGpioBean gpioWatchdogExpired = {
+	.gpio = {
+		.name = "stratopi_watchdog_expired",
+		.mode = GPIO_MODE_IN,
+	},
+};
+
+static struct GpioBean gpioShutdown = {
+	.name = "stratopi_shutdown",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct DebouncedGpioBean gpioUpsBattery = {
+	.gpio = {
+		.name = "stratopi_ups_battery",
+		.mode = GPIO_MODE_IN,
+	},
+};
+
+static struct GpioBean gpioRelay = {
+	.name = "stratopi_relay",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct GpioBean gpioLed = {
+	.name = "stratopi_led",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct DebouncedGpioBean gpioButton = {
+	.gpio = {
+		.name = "stratopi_button",
+		.mode = GPIO_MODE_IN,
+	},
+};
+
+static struct GpioBean gpioI2cExpEnable = {
+	.name = "stratopi_i2cexp_enable",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct GpioBean gpioI2cExpFeedback = {
+	.name = "stratopi_i2cexp_feedback",
+	.mode = GPIO_MODE_IN,
+};
+
+static struct GpioBean gpioUsb1Disable = {
+	.name = "stratopi_usb1_disable",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct GpioBean gpioUsb1Fault = {
+	.name = "stratopi_usb1_fault",
+	.mode = GPIO_MODE_IN,
+};
+
+static struct GpioBean gpioUsb2Disable = {
+	.name = "stratopi_usb2_disable",
+	.mode = GPIO_MODE_OUT,
+};
+
+static struct GpioBean gpioUsb2Fault = {
+	.name = "stratopi_usb2_fault",
+	.mode = GPIO_MODE_IN,
+};
+
+int GPIO_SOFTSERIAL_TX;
+int GPIO_SOFTSERIAL_RX;
+
 static bool softUartInitialized;
 volatile static char softUartRxBuff[SOFT_UART_RX_BUFF_SIZE];
 volatile static int softUartRxBuffIdx;
@@ -153,13 +224,6 @@ static int fwMaxAddr = 0;
 static char fwLine[FW_MAX_LINE_LEN];
 static int fwLineIdx = 0;
 volatile static int fwProgress = 0;
-
-static char toUpper(char c) {
-	if (c >= 97 && c <= 122) {
-		return c - 32;
-	}
-	return c;
-}
 
 static bool startsWith(const char *str, const char *pre) {
 	return strncmp(pre, str, strlen(pre)) == 0;
@@ -176,47 +240,47 @@ static bool mcuMutexLock(void) {
 	return false;
 }
 
-static int getGPIO(struct device *dev, struct device_attribute *attr) {
+struct GpioBean* gpioGetBean(struct device *dev, struct device_attribute *attr) {
 	if (dev == pBuzzerDevice) {
-		return GPIO_BUZZER;
+		return &gpioBuzzer;
 	} else if (dev == pWatchdogDevice) {
 		if (attr == &devAttrWatchdogEnabled) {
-			return GPIO_WATCHDOG_ENABLE;
+			return &gpioWatchdogEnable;
 		} else if (attr == &devAttrWatchdogHeartbeat) {
-			return GPIO_WATCHDOG_HEARTBEAT;
+			return &gpioWatchdogHeartbeat;
 		} else if (attr == &devAttrWatchdogExpired) {
-			return GPIO_WATCHDOG_EXPIRED;
+			return &gpioWatchdogExpired.gpio;
 		}
 	} else if (dev == pPowerDevice) {
-		return GPIO_SHUTDOWN;
+		return &gpioShutdown;
 	} else if (dev == pUpsDevice) {
-		return GPIO_UPS_BATTERY;
+		return &gpioUpsBattery.gpio;
 	} else if (dev == pRelayDevice) {
-		return GPIO_RELAY;
+		return &gpioRelay;
 	} else if (dev == pLedDevice) {
-		return GPIO_LED;
+		return &gpioLed;
 	} else if (dev == pButtonDevice) {
-		return GPIO_BUTTON;
+		return &gpioButton.gpio;
 	} else if (dev == pExpBusDevice) {
 		if (attr == &devAttrExpBusEnabled) {
-			return GPIO_I2CEXP_ENABLE;
+			return &gpioI2cExpEnable;
 		} else if (attr == &devAttrExpBusAux) {
-			return GPIO_I2CEXP_FEEDBACK;
+			return &gpioI2cExpFeedback;
 		}
 	} else if (dev == pUsb1Device) {
 		if (attr == &devAttrUsb1Disabled) {
-			return GPIO_USB1_DISABLE;
+			return &gpioUsb1Disable;
 		} else if (attr == &devAttrUsb1Ok) {
-			return GPIO_USB1_FAULT;
+			return &gpioUsb1Fault;
 		}
 	} else if (dev == pUsb2Device) {
 		if (attr == &devAttrUsb2Disabled) {
-			return GPIO_USB2_DISABLE;
+			return &gpioUsb2Disable;
 		} else if (attr == &devAttrUsb2Ok) {
-			return GPIO_USB2_FAULT;
+			return &gpioUsb2Fault;
 		}
 	}
-	return -1;
+	return NULL;
 }
 
 static int getMcuCmd(struct device *dev, struct device_attribute *attr,
@@ -317,75 +381,6 @@ static int getMcuCmd(struct device *dev, struct device_attribute *attr,
 		}
 	}
 	return -1;
-}
-
-static ssize_t GPIO_show(struct device *dev, struct device_attribute *attr,
-		char *buf) {
-	int gpio;
-	gpio = getGPIO(dev, attr);
-	if (gpio < 0) {
-		return -EINVAL;
-	}
-	return sprintf(buf, "%d\n", gpio_get_value(gpio));
-}
-
-static ssize_t GPIO_store(struct device *dev, struct device_attribute *attr,
-		const char *buf, size_t count) {
-	bool val;
-	int gpio = getGPIO(dev, attr);
-	if (gpio < 0) {
-		return -EINVAL;
-	}
-	if (count < 1) {
-		return -EINVAL;
-	}
-	if (kstrtobool(buf, &val) < 0) {
-		if (toUpper(buf[0]) == 'E') { // Enable
-			val = true;
-		} else if (toUpper(buf[0]) == 'D') { // Disable
-			val = false;
-		} else if (toUpper(buf[0]) == 'F' || toUpper(buf[0]) == 'T') { // Flip/Toggle
-			val = gpio_get_value(gpio) == 1 ? false : true;
-		} else {
-			return -EINVAL;
-		}
-	}
-	gpio_set_value(gpio, val ? 1 : 0);
-	return count;
-}
-
-static ssize_t GPIOBlink_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count) {
-	int i;
-	long on = 0;
-	long off = 0;
-	long rep = 1;
-	char *end = NULL;
-	int gpio = getGPIO(dev, attr);
-	if (gpio < 0) {
-		return -EINVAL;
-	}
-	on = simple_strtol(buf, &end, 10);
-	if (++end < buf + count) {
-		off = simple_strtol(end, &end, 10);
-		if (++end < buf + count) {
-			rep = simple_strtol(end, NULL, 10);
-		}
-	}
-	if (rep < 1) {
-		rep = 1;
-	}
-	if (on > 0) {
-		for (i = 0; i < rep; i++) {
-			gpio_set_value(gpio, 1);
-			msleep(on);
-			gpio_set_value(gpio, 0);
-			if (i < rep - 1) {
-				msleep(off);
-			}
-		}
-	}
-	return count;
 }
 
 static void softUartRxCallback(unsigned char character) {
@@ -687,7 +682,7 @@ static ssize_t fwInstall_store(struct device *dev,
 	}
 	pr_info("stratopi: - | boot loader enabled\n");
 
-	gpio_set_value(GPIO_SHUTDOWN, 1);
+	gpioSetVal(&gpioShutdown, 1);
 
 	cmd[0] = 'X';
 	cmd[1] = 'B';
@@ -771,8 +766,8 @@ static struct device_attribute devAttrBuzzerStatus = {
 		.name = "status",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrBuzzerBeep = {
@@ -781,7 +776,7 @@ static struct device_attribute devAttrBuzzerBeep = {
 		.mode = 0220,
 	},
 	.show = NULL,
-	.store = GPIOBlink_store,
+	.store = devAttrGpioBlink_store,
 };
 
 static struct device_attribute devAttrWatchdogEnabled = {
@@ -789,8 +784,8 @@ static struct device_attribute devAttrWatchdogEnabled = {
 		.name = "enabled",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrWatchdogHeartbeat = {
@@ -798,8 +793,8 @@ static struct device_attribute devAttrWatchdogHeartbeat = {
 		.name = "heartbeat",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrWatchdogExpired = {
@@ -807,7 +802,7 @@ static struct device_attribute devAttrWatchdogExpired = {
 		.name = "expired",
 		.mode = 0440,
 	},
-	.show = GPIO_show,
+	.show = devAttrGpioDeb_show,
 	.store = NULL,
 };
 
@@ -870,8 +865,8 @@ static struct device_attribute devAttrPowerDownEnabled = {
 		.name = "down_enabled",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrPowerDownDelay = {
@@ -933,7 +928,7 @@ static struct device_attribute devAttrUpsBattery = {
 		.name = "battery",
 		.mode = 0440,
 	},
-	.show = GPIO_show,
+	.show = devAttrGpioDeb_show,
 	.store = NULL,
 };
 
@@ -951,8 +946,8 @@ static struct device_attribute devAttrRelayStatus = {
 		.name = "status",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrLedStatus = {
@@ -960,8 +955,8 @@ static struct device_attribute devAttrLedStatus = {
 		.name = "status",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrLedBlink = {
@@ -970,7 +965,7 @@ static struct device_attribute devAttrLedBlink = {
 		.mode = 0220,
 	},
 	.show = NULL,
-	.store = GPIOBlink_store,
+	.store = devAttrGpioBlink_store,
 };
 
 static struct device_attribute devAttrButtonStatus = {
@@ -978,7 +973,34 @@ static struct device_attribute devAttrButtonStatus = {
 		.name = "status",
 		.mode = 0440,
 	},
-	.show = GPIO_show,
+	.show = devAttrGpio_show,
+	.store = NULL,
+};
+
+static struct device_attribute devAttrButtonStatusDeb = {
+	.attr = {
+		.name = "status_deb",
+		.mode = 0440,
+	},
+	.show = devAttrGpioDeb_show,
+	.store = NULL,
+};
+
+static struct device_attribute devAttrButtonStatusDebMs = {
+	.attr = {
+		.name = "status_deb_ms",
+		.mode = 0660,
+	},
+	.show = devAttrGpioDebMsOn_show,
+	.store = devAttrGpioDebMsOn_store,
+};
+
+static struct device_attribute devAttrButtonStatusDebCnt = {
+	.attr = {
+		.name = "status_deb_cnt",
+		.mode = 0440,
+	},
+	.show = devAttrGpioDebOnCnt_show,
 	.store = NULL,
 };
 
@@ -987,8 +1009,8 @@ static struct device_attribute devAttrExpBusEnabled = {
 		.name = "enabled",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrExpBusAux = {
@@ -996,7 +1018,7 @@ static struct device_attribute devAttrExpBusAux = {
 		.name = "aux",
 		.mode = 0440,
 	},
-	.show = GPIO_show,
+	.show = devAttrGpio_show,
 	.store = NULL,
 };
 
@@ -1041,8 +1063,8 @@ static struct device_attribute devAttrUsb1Disabled = {
 		.name = "disabled",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrUsb1Ok = {
@@ -1050,7 +1072,7 @@ static struct device_attribute devAttrUsb1Ok = {
 		.name = "ok",
 		.mode = 0440,
 	},
-	.show = GPIO_show,
+	.show = devAttrGpio_show,
 	.store = NULL,
 };
 
@@ -1059,8 +1081,8 @@ static struct device_attribute devAttrUsb2Disabled = {
 		.name = "disabled",
 		.mode = 0660,
 	},
-	.show = GPIO_show,
-	.store = GPIO_store,
+	.show = devAttrGpio_show,
+	.store = devAttrGpio_store,
 };
 
 static struct device_attribute devAttrUsb2Ok = {
@@ -1068,7 +1090,7 @@ static struct device_attribute devAttrUsb2Ok = {
 		.name = "ok",
 		.mode = 0440,
 	},
-	.show = GPIO_show,
+	.show = devAttrGpio_show,
 	.store = NULL,
 };
 
@@ -1124,17 +1146,18 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_LED);
-		gpio_free(GPIO_LED);
+		gpioFree(&gpioLed);
 	}
 
 	if (pButtonDevice && !IS_ERR(pButtonDevice)) {
 		device_remove_file(pButtonDevice, &devAttrButtonStatus);
+		device_remove_file(pButtonDevice, &devAttrButtonStatusDeb);
+		device_remove_file(pButtonDevice, &devAttrButtonStatusDebMs);
+		device_remove_file(pButtonDevice, &devAttrButtonStatusDebCnt);
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_BUTTON);
-		gpio_free(GPIO_BUTTON);
+		gpioFreeDebounce(&gpioButton);
 	}
 
 	if (pExpBusDevice && !IS_ERR(pExpBusDevice)) {
@@ -1143,10 +1166,8 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_I2CEXP_ENABLE);
-		gpio_free(GPIO_I2CEXP_ENABLE);
-		gpio_unexport(GPIO_I2CEXP_FEEDBACK);
-		gpio_free(GPIO_I2CEXP_FEEDBACK);
+		gpioFree(&gpioI2cExpEnable);
+		gpioFree(&gpioI2cExpFeedback);
 	}
 
 	if (pUsb1Device && !IS_ERR(pUsb1Device)) {
@@ -1155,10 +1176,8 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_USB1_DISABLE);
-		gpio_free(GPIO_USB1_DISABLE);
-		gpio_unexport(GPIO_USB1_FAULT);
-		gpio_free(GPIO_USB1_FAULT);
+		gpioFree(&gpioUsb1Disable);
+		gpioFree(&gpioUsb1Fault);
 	}
 
 	if (pUsb2Device && !IS_ERR(pUsb2Device)) {
@@ -1167,10 +1186,8 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_USB2_DISABLE);
-		gpio_free(GPIO_USB2_DISABLE);
-		gpio_unexport(GPIO_USB2_FAULT);
-		gpio_free(GPIO_USB2_FAULT);
+		gpioFree(&gpioUsb2Disable);
+		gpioFree(&gpioUsb2Fault);
 	}
 
 	if (pSdDevice && !IS_ERR(pSdDevice)) {
@@ -1188,8 +1205,7 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_BUZZER);
-		gpio_free(GPIO_BUZZER);
+		gpioFree(&gpioBuzzer);
 	}
 
 	if (pRelayDevice && !IS_ERR(pRelayDevice)) {
@@ -1197,8 +1213,7 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_RELAY);
-		gpio_free(GPIO_RELAY);
+		gpioFree(&gpioRelay);
 	}
 
 	if (pUpsDevice && !IS_ERR(pUpsDevice)) {
@@ -1207,8 +1222,7 @@ static void cleanup(void) {
 
 		device_destroy(pDeviceClass, 0);
 
-		gpio_unexport(GPIO_UPS_BATTERY);
-		gpio_free(GPIO_UPS_BATTERY);
+		gpioFreeDebounce(&gpioUpsBattery);
 	}
 
 	if (pWatchdogDevice && !IS_ERR(pWatchdogDevice)) {
@@ -1261,14 +1275,10 @@ static void cleanup(void) {
 		class_destroy(pDeviceClass);
 	}
 
-	gpio_unexport(GPIO_WATCHDOG_ENABLE);
-	gpio_free(GPIO_WATCHDOG_ENABLE);
-	gpio_unexport(GPIO_WATCHDOG_HEARTBEAT);
-	gpio_free(GPIO_WATCHDOG_HEARTBEAT);
-	gpio_unexport(GPIO_WATCHDOG_EXPIRED);
-	gpio_free(GPIO_WATCHDOG_EXPIRED);
-	gpio_unexport(GPIO_SHUTDOWN);
-	gpio_free(GPIO_SHUTDOWN);
+	gpioFree(&gpioWatchdogEnable);
+	gpioFree(&gpioWatchdogHeartbeat);
+	gpioFreeDebounce(&gpioWatchdogExpired);
+	gpioFree(&gpioShutdown);
 
 	if (softUartInitialized) {
 		if (!raspberry_soft_uart_finalize()) {
@@ -1281,37 +1291,37 @@ static void cleanup(void) {
 
 static void setGPIO(void) {
 	if (model_num == MODEL_CM) {
-		GPIO_WATCHDOG_ENABLE = 22;
-		GPIO_WATCHDOG_HEARTBEAT = 27;
-		GPIO_WATCHDOG_EXPIRED = 17;
-		GPIO_SHUTDOWN = 18;
-		GPIO_LED = 16;
-		GPIO_BUTTON = 25;
+		gpioWatchdogEnable.gpio = 22;
+		gpioWatchdogHeartbeat.gpio = 27;
+		gpioWatchdogExpired.gpio.gpio = 17;
+		gpioShutdown.gpio = 18;
+		gpioLed.gpio = 16;
+		gpioButton.gpio.gpio = 25;
 		GPIO_SOFTSERIAL_TX = 23;
 		GPIO_SOFTSERIAL_RX = 24;
 	} else if (model_num == MODEL_CMDUO || model_num == MODEL_CM_2) {
-		GPIO_WATCHDOG_ENABLE = 39;
-		GPIO_WATCHDOG_HEARTBEAT = 32;
-		GPIO_WATCHDOG_EXPIRED = 17;
-		GPIO_SHUTDOWN = 18;
-		GPIO_LED = 16;
-		GPIO_BUTTON = 38;
-		GPIO_I2CEXP_ENABLE = 6;
-		GPIO_I2CEXP_FEEDBACK = 34;
-		GPIO_USB1_DISABLE = 30;
-		GPIO_USB1_FAULT = 0;
-		GPIO_USB2_DISABLE = 31;
-		GPIO_USB2_FAULT = 1;
+		gpioWatchdogEnable.gpio = 39;
+		gpioWatchdogHeartbeat.gpio = 32;
+		gpioWatchdogExpired.gpio.gpio = 17;
+		gpioShutdown.gpio = 18;
+		gpioLed.gpio = 16;
+		gpioButton.gpio.gpio = 38;
+		gpioI2cExpEnable.gpio = 6;
+		gpioI2cExpFeedback.gpio = 34;
+		gpioUsb1Disable.gpio = 30;
+		gpioUsb1Fault.gpio = 0;
+		gpioUsb2Disable.gpio = 31;
+		gpioUsb2Fault.gpio = 1;
 		GPIO_SOFTSERIAL_TX = 37;
 		GPIO_SOFTSERIAL_RX = 33;
 	} else {
-		GPIO_BUZZER = 20;
-		GPIO_WATCHDOG_ENABLE = 6;
-		GPIO_WATCHDOG_HEARTBEAT = 5;
-		GPIO_WATCHDOG_EXPIRED = 12;
-		GPIO_SHUTDOWN = 16;
-		GPIO_UPS_BATTERY = 26;
-		GPIO_RELAY = 26;
+		gpioBuzzer.gpio = 20;
+		gpioWatchdogEnable.gpio = 6;
+		gpioWatchdogHeartbeat.gpio = 5;
+		gpioWatchdogExpired.gpio.gpio = 12;
+		gpioShutdown.gpio = 16;
+		gpioUpsBattery.gpio.gpio = 26;
+		gpioRelay.gpio = 26;
 		GPIO_SOFTSERIAL_TX = 13;
 		GPIO_SOFTSERIAL_RX = 19;
 	}
@@ -1614,6 +1624,9 @@ static int __init stratopi_init(void) {
 
 	if (pButtonDevice) {
 		result |= device_create_file(pButtonDevice, &devAttrButtonStatus);
+		result |= device_create_file(pButtonDevice, &devAttrButtonStatusDeb);
+		result |= device_create_file(pButtonDevice, &devAttrButtonStatusDebMs);
+		result |= device_create_file(pButtonDevice, &devAttrButtonStatusDebCnt);
 	}
 
 	if (pExpBusDevice) {
@@ -1661,79 +1674,44 @@ static int __init stratopi_init(void) {
 	}
 
 	if (pBuzzerDevice) {
-		gpio_request(GPIO_BUZZER, "stratopi_buzzer");
-		result |= gpio_direction_output(GPIO_BUZZER, false);
-		gpio_export(GPIO_BUZZER, false);
+		result |= gpioInit(&gpioBuzzer);
 	}
 
-	gpio_request(GPIO_WATCHDOG_ENABLE, "stratopi_watchdog_enable");
-	result |= gpio_direction_output(GPIO_WATCHDOG_ENABLE, false);
-	gpio_export(GPIO_WATCHDOG_ENABLE, false);
+	result |= gpioInit(&gpioWatchdogEnable);
+	result |= gpioInit(&gpioWatchdogHeartbeat);
+	result |= gpioInitDebounce(&gpioWatchdogExpired);
 
-	gpio_request(GPIO_WATCHDOG_HEARTBEAT, "stratopi_watchdog_heartbeat");
-	result |= gpio_direction_output(GPIO_WATCHDOG_HEARTBEAT, false);
-	gpio_export(GPIO_WATCHDOG_HEARTBEAT, false);
-
-	gpio_request(GPIO_WATCHDOG_EXPIRED, "stratopi_watchdog_expired");
-	result |= gpio_direction_input(GPIO_WATCHDOG_EXPIRED);
-	gpio_export(GPIO_WATCHDOG_EXPIRED, false);
-
-	gpio_request(GPIO_SHUTDOWN, "stratopi_shutdown");
-	result |= gpio_direction_output(GPIO_SHUTDOWN, false);
-	gpio_export(GPIO_SHUTDOWN, false);
+	result |= gpioInit(&gpioShutdown);
 
 	if (pUpsDevice) {
-		gpio_request(GPIO_UPS_BATTERY, "stratopi_battery");
-		result |= gpio_direction_input(GPIO_UPS_BATTERY);
-		gpio_export(GPIO_UPS_BATTERY, false);
+		result |= gpioInitDebounce(&gpioUpsBattery);
 	}
 
 	if (pRelayDevice) {
-		gpio_request(GPIO_RELAY, "stratopi_relay");
-		result |= gpio_direction_output(GPIO_RELAY, false);
-		gpio_export(GPIO_RELAY, false);
+		result |= gpioInit(&gpioRelay);
 	}
 
 	if (pLedDevice) {
-		gpio_request(GPIO_LED, "stratopi_led");
-		result |= gpio_direction_output(GPIO_LED, false);
-		gpio_export(GPIO_LED, false);
+		result |= gpioInit(&gpioLed);
 	}
 
 	if (pButtonDevice) {
-		gpio_request(GPIO_BUTTON, "stratopi_button");
-		result |= gpio_direction_input(GPIO_BUTTON);
-		gpio_export(GPIO_BUTTON, false);
+		result |= gpioInitDebounce(&gpioButton);
 	}
 
 	if (pExpBusDevice) {
-		gpio_request(GPIO_I2CEXP_ENABLE, "stratopi_i2cexp_enable");
-		result |= gpio_direction_output(GPIO_I2CEXP_ENABLE, false);
-		gpio_export(GPIO_I2CEXP_ENABLE, false);
-
-		gpio_request(GPIO_I2CEXP_FEEDBACK, "stratopi_i2cexp_feedback");
-		result |= gpio_direction_input(GPIO_I2CEXP_FEEDBACK);
-		gpio_export(GPIO_I2CEXP_FEEDBACK, false);
+		result |= gpioInit(&gpioI2cExpEnable);
+		result |= gpioInit(&gpioI2cExpFeedback);
 	}
 
 	if (pUsb1Device) {
-		gpio_request(GPIO_USB1_DISABLE, "stratopi_usb1_disable");
-		result |= gpio_direction_output(GPIO_USB1_DISABLE, false);
-		gpio_export(GPIO_USB1_DISABLE, false);
-
-		gpio_request(GPIO_USB1_FAULT, "stratopi_usb1_fault");
-		result |= gpio_direction_input(GPIO_USB1_FAULT);
-		gpio_export(GPIO_USB1_FAULT, false);
+		result |= gpioInit(&gpioUsb1Disable);
+		result |= gpioInit(&gpioUsb1Fault);
 	}
 
 	if (pUsb2Device) {
-		gpio_request(GPIO_USB2_DISABLE, "stratopi_usb2_disable");
-		result |= gpio_direction_output(GPIO_USB2_DISABLE, false);
-		gpio_export(GPIO_USB2_DISABLE, false);
-
-		gpio_request(GPIO_USB2_FAULT, "stratopi_usb2_fault");
-		result |= gpio_direction_input(GPIO_USB2_FAULT);
-		gpio_export(GPIO_USB2_FAULT, false);
+		result |= gpioInit(&gpioUsb2Disable);
+		result |= gpioInit(&gpioUsb2Fault);
 	}
 
 	if (result) {
