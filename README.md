@@ -82,6 +82,10 @@ For instance, for Strato Pi CM Duo:
 
     options stratopi model_num=7
 
+Alternattively, you can use the option `model_num_fallback` which will set the specified model number only if the autodetect fails. E.g.:
+
+    options stratopi model_num_fallback=7
+
 Reboot after `/etc/modprobe.d/stratopi.conf` has been modified:
 
     sudo reboot
@@ -123,8 +127,8 @@ Examples:
 |enabled|R/W|0|Watchdog disabled|
 |enabled|R/W|1|Watchdog enabled|
 |enabled|W|F|Flip watchdog enabled state|
-|expired|R|0|Watchdog timeout not expired|
-|expired|R|1|Watchdog timeout expired|
+|expired<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|0|Watchdog timeout not expired|
+|expired<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|1|Watchdog timeout expired|
 |heartbeat|W|0|Set watchdog heartbeat line low|
 |heartbeat|W|1|Set watchdog heartbeat line high|
 |heartbeat|W|F|Flip watchdog heartbeat state|
@@ -191,8 +195,8 @@ Examples:
 
 |File|R/W|Value|Description|
 |----|:---:|:-:|-----------|
-|battery|R|0|Running on main power|
-|battery|R|1|Running on battery power|
+|battery<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|0|Running on main power|
+|battery<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|1|Running on battery power|
 |_power_delay_*|R/W|&lt;t&gt;|MCU config XUB&lt;t&gt; - UPS automatic power-cycle timeout, in seconds (0 - 99999). Strato Pi UPS will automatically initiate a delayed power-cycle (just like when /power/down_enabled is set to 1) if the main power source is not available for the number of seconds set. A value of 0 (factory default) disables the automatic power-cycle|
 
 ### Relay - `/sys/class/stratopi/relay/`
@@ -219,6 +223,10 @@ Examples:
 |----|:---:|:-:|-----------|
 |status|R|0|Button released|
 |status|R|1|Button pressed|
+|status_deb<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|0|Button debounced state released|
+|status_deb<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|1|Button debounced state pressed|
+|status_deb_ms|R/W|<val>|Button debounce time in milliseconds. Default: 50|
+|status_deb_cnt|R/W|<val>|Button debounced presses count. Rolls back to 0 after 4294967295|
 
 ### Expansion Bus - `/sys/class/stratopi/expbus/`
 
