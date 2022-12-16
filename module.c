@@ -45,7 +45,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.9");
+MODULE_VERSION("1.10");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
