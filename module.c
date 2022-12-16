@@ -1149,15 +1149,6 @@ static void cleanup(void) {
 		gpio_free(GPIO_I2CEXP_FEEDBACK);
 	}
 
-	if (pSdDevice && !IS_ERR(pSdDevice)) {
-		device_remove_file(pSdDevice, &devAttrSdSdxEnabled);
-		device_remove_file(pSdDevice, &devAttrSdSd1Enabled);
-		device_remove_file(pSdDevice, &devAttrSdSdxRouting);
-		device_remove_file(pSdDevice, &devAttrSdSdxDefault);
-
-		device_destroy(pDeviceClass, 0);
-	}
-
 	if (pUsb1Device && !IS_ERR(pUsb1Device)) {
 		device_remove_file(pUsb1Device, &devAttrUsb1Disabled);
 		device_remove_file(pUsb1Device, &devAttrUsb1Ok);
@@ -1180,6 +1171,15 @@ static void cleanup(void) {
 		gpio_free(GPIO_USB2_DISABLE);
 		gpio_unexport(GPIO_USB2_FAULT);
 		gpio_free(GPIO_USB2_FAULT);
+	}
+
+	if (pSdDevice && !IS_ERR(pSdDevice)) {
+		device_remove_file(pSdDevice, &devAttrSdSdxEnabled);
+		device_remove_file(pSdDevice, &devAttrSdSd1Enabled);
+		device_remove_file(pSdDevice, &devAttrSdSdxRouting);
+		device_remove_file(pSdDevice, &devAttrSdSdxDefault);
+
+		device_destroy(pDeviceClass, 0);
 	}
 
 	if (pBuzzerDevice && !IS_ERR(pBuzzerDevice)) {
