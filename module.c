@@ -49,6 +49,10 @@ static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
 MODULE_PARM_DESC(model_num, " Strato Pi model number");
 
+static int model_num_fallback = -1;
+module_param( model_num_fallback, int, S_IRUGO);
+MODULE_PARM_DESC(model_num_fallback, " Strato Pi model number auto-detect fail fallback");
+
 int GPIO_BUZZER;
 int GPIO_WATCHDOG_ENABLE;
 int GPIO_WATCHDOG_HEARTBEAT;
@@ -1414,6 +1418,8 @@ static bool detectFwVerAndModel(void) {
 
 static int __init stratopi_init(void) {
 	int result = 0;
+	bool modNumDetected = false;
+
 	softUartInitialized = false;
 
 	pr_info("stratopi: - | init\n");
@@ -1426,17 +1432,25 @@ static int __init stratopi_init(void) {
 		goto fail;
 	}
 
-	if (model_num > 0) {
+	if (model_num <= 0) {
+		pr_info("stratopi: - | detecting model...\n");
+		modNumDetected = detectFwVerAndModel();
+		if (!modNumDetected) {
+			pr_alert("stratopi: * | error detecting model\n");
+			if (model_num_fallback > 0) {
+				pr_info("stratopi: - | using fallback model number\n");
+				model_num = model_num_fallback;
+			} else {
+				result = -1;
+				goto fail;
+			}
+		}
+	}
+
+	if (!modNumDetected) {
 		setGPIO();
 		if (!softUartInit()) {
 			pr_alert("stratopi: * | error initializing soft UART\n");
-			result = -1;
-			goto fail;
-		}
-	} else {
-		pr_info("stratopi: - | detecting model...\n");
-		if (!detectFwVerAndModel()) {
-			pr_alert("stratopi: * | error detecting model\n");
 			result = -1;
 			goto fail;
 		}
