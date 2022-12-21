@@ -225,8 +225,8 @@ Examples:
 |status|R|1|Button pressed|
 |status_deb<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|0|Button debounced state released|
 |status_deb<sup>([pollable](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/poll-sysfs-files.md))</sup>|R|1|Button debounced state pressed|
-|status_deb_ms|R/W|<val>|Button debounce time in milliseconds. Default: 50|
-|status_deb_cnt|R/W|<val>|Button debounced presses count. Rolls back to 0 after 4294967295|
+|status_deb_ms|R/W|&lt;val&gt;|Button debounce time in milliseconds. Default: 50|
+|status_deb_cnt|R/W|&lt;val&gt;|Button debounced presses count. Rolls back to 0 after 4294967295|
 
 ### Expansion Bus - `/sys/class/stratopi/expbus/`
 
