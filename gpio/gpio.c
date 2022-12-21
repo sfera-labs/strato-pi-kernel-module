@@ -7,7 +7,7 @@
 static void debounceTimerRestart(struct DebouncedGpioBean *deb) {
 	unsigned long debTime_usec;
 
-	if (gpio_get_value(deb->gpio.gpio)) {
+	if (gpioGetVal(&deb->gpio)) {
 		debTime_usec = deb->onMinTime_usec;
 	} else {
 		debTime_usec = deb->offMinTime_usec;
@@ -34,7 +34,7 @@ static enum hrtimer_restart debounceTimerHandler(struct hrtimer *tmr) {
 	int val;
 
 	deb = container_of(tmr, struct DebouncedGpioBean, timer);
-	val = gpio_get_value(deb->gpio.gpio);
+	val = gpioGetVal(&deb->gpio);
 
 	if (deb->value != val) {
 		deb->value = val;
