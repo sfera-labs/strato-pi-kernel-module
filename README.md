@@ -161,7 +161,7 @@ Examples:
 |----|:---:|:-:|-----------|
 |_mode_*|R/W|A|MCU config XSMA - Automatic (factory default): TX/RX switching is done automatically, based on speed and number of bits detection|
 |_mode_*|R/W|P|MCU config XSMP - Passive: TX/RX switching is not actively controlled by Strato Pi|
-|_mode_*|R/W|F|MCU config XSMF - Fixed: TX/RX switching is based on speed, number of bits, parity and number ofstop bits set in /params|
+|_mode_*|R/W|F|MCU config XSMF - Fixed: TX/RX switching is based on speed, number of bits, parity and number of stop bits set in /params|
 |_params_*|R/W|&lt;rbps&gt;|MCU config XSP&lt;rbps&gt; - Set RS-485 communication parameters: baud rate (r), number of bits (b), parity (p) and number of stop bits (s) for fixed mode, see below tables|
 
 |Baud rate (r) value|Description|
