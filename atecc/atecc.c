@@ -80,10 +80,6 @@ static int atecc_i2c_probe(struct i2c_client *client,
 	return ret;
 }
 
-static int atecc_i2c_remove(struct i2c_client *client) {
-	return 0;
-}
-
 const struct of_device_id atecc_of_match[] = {
 	{ .compatible = "sferalabs,atecc", },
 	{ },
@@ -103,7 +99,6 @@ static struct i2c_driver atecc_i2c_driver = {
 		.of_match_table = of_match_ptr(atecc_of_match),
 	},
 	.probe = atecc_i2c_probe,
-	.remove = atecc_i2c_remove,
 	.id_table = atecc_i2c_id,
 };
 
