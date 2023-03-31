@@ -1,7 +1,7 @@
 /*
  * stratopi
  *
- *     Copyright (C) 2019-2022 Sfera Labs S.r.l.
+ *     Copyright (C) 2019-2023 Sfera Labs S.r.l.
  *
  *     For information, see the Strato Pi web site:
  *     https://www.sferalabs.cc/strato-pi
@@ -45,7 +45,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.13");
+MODULE_VERSION("1.14");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
