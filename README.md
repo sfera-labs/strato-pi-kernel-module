@@ -21,7 +21,7 @@ Make sure your system is updated:
     sudo apt update
     sudo apt upgrade
 
-If you are using a Strato Pi with Raspberry Pi (CM) **4** and a **32-bit** OS, add to `/boot/config.txt` the following line: [[why?](https://github.com/raspberrypi/firmware/issues/1795)]
+If you are using a Strato Pi with Raspberry Pi **4** or Raspberry Pi CM **4S** and a **32-bit** OS, add to `/boot/config.txt` the following line: [[why?](https://github.com/raspberrypi/firmware/issues/1795)]
 
     arm_64bit=0
     
