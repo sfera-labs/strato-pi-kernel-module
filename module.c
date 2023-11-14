@@ -45,7 +45,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.14");
+MODULE_VERSION("1.15");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -1474,7 +1474,11 @@ static int __init stratopi_init(void) {
 
 	softUartInitialized = true;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+	pDeviceClass = class_create("stratopi");
+#else
 	pDeviceClass = class_create(THIS_MODULE, "stratopi");
+#endif
 	if (IS_ERR(pDeviceClass)) {
 		pr_alert("stratopi: * | failed to create device class\n");
 		result = -1;

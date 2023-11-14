@@ -1,6 +1,8 @@
 #include "atecc.h"
 #include <linux/module.h>
 #include <linux/delay.h>
+#include <linux/i2c.h>
+#include <linux/version.h>
 
 struct AteccBean {
 	uint8_t serialNumber[9];
@@ -33,8 +35,12 @@ static void getCRC16LittleEndian(size_t length, const uint8_t *data,
 	crc_le[1] = (uint8_t) (crc >> 8);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+static int atecc_i2c_probe(struct i2c_client *client) {
+#else
 static int atecc_i2c_probe(struct i2c_client *client,
 		const struct i2c_device_id *id) {
+#endif
 	uint8_t i;
 	int ret = -1;
 	uint8_t i2c_wake_msg = 0x00; // msg sent to I2C bus to wake up ATECC608A from sleep state
@@ -55,7 +61,7 @@ static int atecc_i2c_probe(struct i2c_client *client,
 	 */
 	uint8_t i2c_message[8] = { 0x03, 0x07, 0x02, 0x80, 0x00, 0x00, 0x09, 0xAD };
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 10; i++) {
 		// send wake up message, no check on return value
 		i2c_master_send(client, &i2c_wake_msg, 1);
 		msleep(1);
@@ -75,6 +81,7 @@ static int atecc_i2c_probe(struct i2c_client *client,
 				}
 			}
 		}
+		msleep(10);
 	}
 
 	return ret;
