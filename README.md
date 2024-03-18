@@ -40,6 +40,7 @@ Clone this repo:
 Make and install:
 
     cd strato-pi-kernel-module
+    make clean
     make
     sudo make install
     
