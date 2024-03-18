@@ -1,23 +1,17 @@
 #ifndef _SL_GPIO_H
 #define _SL_GPIO_H
 
-#include <linux/device.h>
 #include <linux/version.h>
-
-#define GPIO_MODE_IN 		1
-#define GPIO_MODE_OUT		2
+#include <linux/platform_device.h>
+#include <linux/gpio/consumer.h>
 
 #define DEBOUNCE_DEFAULT_TIME_USEC 50000ul
 #define DEBOUNCE_STATE_NOT_DEFINED -1
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
-#define gpio_set_debounce(X, Y) gpiod_set_debounce(gpio_to_desc(X), Y)
-#endif
-
 struct GpioBean {
 	const char *name;
-	int gpio;
-	int mode;
+	struct gpio_desc *desc;
+	enum gpiod_flags flags;
 	bool invert;
 	void *owner;
 };
@@ -34,6 +28,8 @@ struct DebouncedGpioBean {
 	struct hrtimer timer;
 	struct kernfs_node *notifKn;
 };
+
+void gpioSetPlatformDev(struct platform_device *pdev);
 
 int gpioInit(struct GpioBean *g);
 

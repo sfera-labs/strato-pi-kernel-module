@@ -5,6 +5,43 @@
 	compatible = "brcm,bcm2835";
 	
 	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			dios: dios@0 {
+				compatible = "sferalabs,stratopi";
+				pinctrl-names = "default";
+				status = "okay";
+				
+				stratopi_gp22-gpios = <&gpio 22 0>;
+				stratopi_gp27-gpios = <&gpio 27 0>;
+				stratopi_gp17-gpios = <&gpio 17 0>;
+				stratopi_gp18-gpios = <&gpio 18 0>;
+				stratopi_gp16-gpios = <&gpio 16 0>;
+				stratopi_gp25-gpios = <&gpio 25 0>;
+				stratopi_gp23-gpios = <&gpio 23 0>;
+				stratopi_gp24-gpios = <&gpio 24 0>;
+				stratopi_gp39-gpios = <&gpio 39 0>;
+				stratopi_gp32-gpios = <&gpio 32 0>;
+				stratopi_gp38-gpios = <&gpio 38 0>;
+				stratopi_gp6-gpios = <&gpio 6 0>;
+				stratopi_gp34-gpios = <&gpio 34 0>;
+				stratopi_gp30-gpios = <&gpio 30 0>;
+				stratopi_gp0-gpios = <&gpio 0 0>;
+				stratopi_gp31-gpios = <&gpio 31 0>;
+				stratopi_gp1-gpios = <&gpio 1 0>;
+				stratopi_gp37-gpios = <&gpio 37 0>;
+				stratopi_gp33-gpios = <&gpio 33 0>;
+				stratopi_gp20-gpios = <&gpio 20 0>;
+				stratopi_gp5-gpios = <&gpio 5 0>;
+				stratopi_gp12-gpios = <&gpio 12 0>;
+				stratopi_gp26-gpios = <&gpio 26 0>;
+				stratopi_gp13-gpios = <&gpio 13 0>;
+				stratopi_gp19-gpios = <&gpio 19 0>;
+			};
+		};
+	};
+	
+	fragment@1 {
 		target = <&i2c_arm>;
 		__overlay__ {
 			#address-cells = <1>;

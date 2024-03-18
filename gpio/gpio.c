@@ -1,8 +1,9 @@
 #include "gpio.h"
 #include "../commons/commons.h"
 #include <linux/delay.h>
-#include <linux/gpio.h>
 #include <linux/interrupt.h>
+
+static struct platform_device *_pdev;
 
 static void debounceTimerRestart(struct DebouncedGpioBean *deb) {
 	unsigned long debTime_usec;
@@ -51,15 +52,13 @@ static enum hrtimer_restart debounceTimerHandler(struct hrtimer *tmr) {
 	return HRTIMER_NORESTART;
 }
 
+void gpioSetPlatformDev(struct platform_device *pdev) {
+	_pdev = pdev;
+}
+
 int gpioInit(struct GpioBean *g) {
-	if (g->mode == GPIO_MODE_OUT) {
-		gpio_request(g->gpio, g->name);
-		return gpio_direction_output(g->gpio, 0);
-	} else if (g->mode == GPIO_MODE_IN) {
-		gpio_request(g->gpio, g->name);
-		return gpio_direction_input(g->gpio);
-	}
-	return -1;
+	g->desc = gpiod_get(&_pdev->dev, g->name, g->flags);
+	return IS_ERR(g->desc);
 }
 
 int gpioInitDebounce(struct DebouncedGpioBean *d) {
@@ -80,7 +79,7 @@ int gpioInitDebounce(struct DebouncedGpioBean *d) {
 	hrtimer_init(&d->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	d->timer.function = &debounceTimerHandler;
 
-	d->irq = gpio_to_irq(d->gpio.gpio);
+	d->irq = gpiod_to_irq(d->gpio.desc);
 	res = request_irq(d->irq, debounceIrqHandler,
 			(IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING), d->gpio.name, d);
 	if (res) {
@@ -94,7 +93,9 @@ int gpioInitDebounce(struct DebouncedGpioBean *d) {
 }
 
 void gpioFree(struct GpioBean *g) {
-	gpio_free(g->gpio);
+	if (g->desc != NULL && !IS_ERR(g->desc)) {
+		gpiod_put(g->desc);
+	}
 }
 
 void gpioFreeDebounce(struct DebouncedGpioBean *d) {
@@ -108,7 +109,7 @@ void gpioFreeDebounce(struct DebouncedGpioBean *d) {
 
 int gpioGetVal(struct GpioBean *g) {
 	int v;
-	v = gpio_get_value(g->gpio);
+	v = gpiod_get_value(g->desc);
 	if (g->invert) {
 		v = v == 0 ? 1 : 0;
 	}
@@ -119,7 +120,7 @@ void gpioSetVal(struct GpioBean *g, int val) {
 	if (g->invert) {
 		val = val == 0 ? 1 : 0;
 	}
-	gpio_set_value(g->gpio, val);
+	gpiod_set_value(g->desc, val);
 }
 
 ssize_t devAttrGpioMode_show(struct device *dev, struct device_attribute *attr,
@@ -129,10 +130,10 @@ ssize_t devAttrGpioMode_show(struct device *dev, struct device_attribute *attr,
 	if (g == NULL) {
 		return -EFAULT;
 	}
-	if (g->mode == GPIO_MODE_IN) {
+	if (g->flags == GPIOD_IN) {
 		return sprintf(buf, "in\n");
 	}
-	if (g->mode == GPIO_MODE_OUT) {
+	if (g->flags == GPIOD_OUT_HIGH || g->flags == GPIOD_OUT_LOW) {
 		return sprintf(buf, "out\n");
 	}
 	return sprintf(buf, "x\n");
@@ -150,20 +151,20 @@ ssize_t devAttrGpioMode_store(struct device *dev, struct device_attribute *attr,
 		return -EBUSY;
 	}
 
+	gpioFree(g);
+	g->owner = NULL;
+
 	if (toUpper(buf[0]) == 'I') {
-		g->mode = GPIO_MODE_IN;
+		g->flags = GPIOD_IN;
 	} else if (toUpper(buf[0]) == 'O') {
-		g->mode = GPIO_MODE_OUT;
+		g->flags = GPIOD_OUT_LOW;
 	} else {
-		g->mode = 0;
+		g->flags = 0;
 	}
 
-	gpio_free(g->gpio);
-	g->owner = NULL;
-	if (g->mode != 0) {
+	if (g->flags != 0) {
 		if (gpioInit(g)) {
-			g->mode = 0;
-			gpio_free(g->gpio);
+			g->flags = 0;
 			return -EFAULT;
 		} else {
 			g->owner = attr;
@@ -180,7 +181,8 @@ ssize_t devAttrGpio_show(struct device *dev,
 	if (g == NULL) {
 		return -EFAULT;
 	}
-	if (g->mode != GPIO_MODE_IN && g->mode != GPIO_MODE_OUT) {
+	if (g->flags != GPIOD_IN && g->flags != GPIOD_OUT_LOW
+			&& g->flags != GPIOD_OUT_HIGH) {
 		return -EPERM;
 	}
 	return sprintf(buf, "%d\n", gpioGetVal(g));
@@ -201,29 +203,37 @@ static int mkstrtobool(const char *s, bool *res) {
 
 	switch (s[0]) {
 	case 'y':
+		// fall through
 	case 'Y':
+		// fall through
 	case '1':
 		*res = true;
 		return 0;
 	case 'n':
+		// fall through
 	case 'N':
+		// fall through
 	case '0':
 		*res = false;
 		return 0;
 	case 'o':
+		// fall through
 	case 'O':
 		switch (s[1]) {
 		case 'n':
+			// fall through
 		case 'N':
 			*res = true;
 			return 0;
 		case 'f':
+			// fall through
 		case 'F':
 			*res = false;
 			return 0;
 		default:
 			break;
 		}
+		break;
 	default:
 		break;
 	}
@@ -239,7 +249,7 @@ ssize_t devAttrGpio_store(struct device *dev,
 	if (g == NULL) {
 		return -EFAULT;
 	}
-	if (g->mode != GPIO_MODE_OUT) {
+	if (g->flags != GPIOD_OUT_HIGH && g->flags != GPIOD_OUT_LOW) {
 		return -EPERM;
 	}
 	if (mkstrtobool(buf, &val) < 0) {
@@ -269,7 +279,7 @@ ssize_t devAttrGpioBlink_store(struct device *dev,
 	if (g == NULL) {
 		return -EFAULT;
 	}
-	if (g->mode != GPIO_MODE_OUT) {
+	if (g->flags != GPIOD_OUT_HIGH && g->flags != GPIOD_OUT_LOW) {
 		return -EPERM;
 	}
 	on = simple_strtol(buf, &end, 10);
