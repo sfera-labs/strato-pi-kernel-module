@@ -47,7 +47,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.17");
+MODULE_VERSION("1.18");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -409,7 +409,8 @@ static void softUartRxCallback(unsigned char character) {
 
 static bool softUartSendAndWait(const char *cmd, int cmdLen, int respLen,
 		int timeout, bool print) {
-	for (int i = 0; i < 3; i++) {
+	int i;
+	for (i = 0; i < 3; i++) {
 		int waitTime = 0;
 		raspberry_soft_uart_open(NULL);
 		softUartRxBuffIdx = 0;
