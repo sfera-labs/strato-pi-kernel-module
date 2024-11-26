@@ -78,12 +78,12 @@ Where `<n>` is set according to this table:
 |--------|:---------:|
 |Strato Pi Base rev. < 3.0|1|
 |Strato Pi UPS rev. < 3.0|2|
-|Strato Pi CAN rev. < 2.0|3|
+|Strato Pi CAN rev. < 1.2|3|
 |Strato Pi CM rev. < 2.0|4|
 |Strato Pi Base rev. ≥ 3.0|5|
 |Strato Pi UPS rev. ≥ 3.0|6|
 |Strato Pi CM Duo|7|
-|Strato Pi CAN rev. ≥ 2.0|8|
+|Strato Pi CAN rev. ≥ 1.2|8|
 |Strato Pi CM rev. ≥ 2.0|9|
 
 For instance, for Strato Pi CM Duo:
