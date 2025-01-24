@@ -47,7 +47,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.19");
+MODULE_VERSION("1.20");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -1593,8 +1593,6 @@ static int stratopi_init(struct platform_device *pdev) {
 	}
 
 	if (model_num >= MODEL_BASE_3) {
-		ateccAddDriver();
-
 		pSecElDevice = device_create(pDeviceClass, NULL, 0, NULL, "sec_elem");
 
 		if (IS_ERR(pSecElDevice)) {
