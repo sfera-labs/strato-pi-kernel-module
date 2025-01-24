@@ -1,7 +1,7 @@
 /*
  * stratopi
  *
- *     Copyright (C) 2019-2023 Sfera Labs S.r.l.
+ *     Copyright (C) 2019-2025 Sfera Labs S.r.l.
  *
  *     For information, see the Strato Pi web site:
  *     https://www.sferalabs.cc/strato-pi
@@ -19,6 +19,7 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/i2c.h>
 
 #include "soft_uart/raspberry_soft_uart.h"
 #include "atecc/atecc.h"
@@ -47,7 +48,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.20");
+MODULE_VERSION("1.21");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
