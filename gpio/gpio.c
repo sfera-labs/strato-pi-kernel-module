@@ -305,7 +305,7 @@ ssize_t devAttrGpioBlink_store(struct device *dev,
 	return count;
 }
 
-struct DebouncedGpioBean* gpioGetDebouncedBean(struct device *dev,
+static struct DebouncedGpioBean* gpioGetDebouncedBean(struct device *dev,
 		struct device_attribute *attr) {
 	struct GpioBean *g;
 	struct DebouncedGpioBean *d;

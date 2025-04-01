@@ -48,7 +48,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.22");
+MODULE_VERSION("1.23");
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);
@@ -233,8 +233,8 @@ static struct GpioBean gpioSoftSerRx = {
 };
 
 static bool softUartInitialized;
-volatile static char softUartRxBuff[SOFT_UART_RX_BUFF_SIZE];
-volatile static int softUartRxBuffIdx;
+static volatile char softUartRxBuff[SOFT_UART_RX_BUFF_SIZE];
+static volatile int softUartRxBuffIdx;
 
 static int fwVerMaj = 4;
 static int fwVerMin = 0;
@@ -242,7 +242,7 @@ static uint8_t fwBytes[FW_MAX_SIZE];
 static int fwMaxAddr = 0;
 static char fwLine[FW_MAX_LINE_LEN];
 static int fwLineIdx = 0;
-volatile static int fwProgress = 0;
+static volatile int fwProgress = 0;
 
 static bool startsWith(const char *str, const char *pre) {
 	return strncmp(pre, str, strlen(pre)) == 0;
@@ -1763,10 +1763,16 @@ static int stratopi_init(struct platform_device *pdev) {
 	return result;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+static void stratopi_exit(struct platform_device *pdev) {
+#else
 static int stratopi_exit(struct platform_device *pdev) {
-	cleanup();
-	pr_info(LOG_TAG "exit\n");
-	return 0;
+#endif
+  cleanup();
+  pr_info(LOG_TAG "exit\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
+  return 0;
+#endif
 }
 
 const struct of_device_id stratopi_of_match[] = {
