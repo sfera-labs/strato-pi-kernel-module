@@ -1,14 +1,8 @@
-# Strato Pi kernel module
+# Strato Pi driver kernel module
 
-Raspberry Pi kernel module for using [Strato Pi](https://www.sferalabs.cc/strato-pi/) via sysfs.
+Raspberry Pi OS (Debian) Kernel module for [Strato Pi](https://www.sferalabs.cc/strato-pi/).
 
-For instance, check if the watchdog is enabled:
-
-    cat /sys/class/stratopi/watchdog/enabled
-    
-Enable the watchdog:
-
-    echo 1 > /sys/class/stratopi/watchdog/enabled
+It gives access to all Strato Pi functionalities and configuration options via sysfs virtual files.
     
 Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with firmware version >= 4.0.
 
@@ -28,10 +22,6 @@ If you are using a Strato Pi with Raspberry Pi **4** or Raspberry Pi CM **4S** a
 Reboot:
 
     sudo reboot
-    
-After reboot, install git and the Raspberry Pi kernel headers:
-
-    sudo apt install git raspberrypi-kernel-headers
 
 Clone this repo:
 
@@ -53,7 +43,7 @@ Add to `/boot/firmware/config.txt` (`/boot/config.txt` in older versions) the fo
 
     dtoverlay=stratopi
 
-Optionally, to be able to use the `/sys/class/stratopi/` files not as super user, create a new group "stratopi" and set it as the module owner group by adding an udev rule:
+Optionally, to access the sysfs interface without superuser privileges, create a new group "stratopi" and set it as the module owner group by adding an **udev** rule:
 
     sudo groupadd stratopi
     sudo cp 99-stratopi.rules /etc/udev/rules.d/
@@ -100,12 +90,20 @@ Reboot after `/etc/modprobe.d/stratopi.conf` has been modified:
 
 ## Usage
 
-After loading the module, you will find all the available devices under the directory `/sys/class/stratopi/`.
+After installation, you will find all the available devices under the `/sys/class/stratopi/` directory.
 
 The following paragraphs list all the possible devices (directories) and files coresponding to Strato Pi's features. 
 Depending on the model you will find the available ones.
 
 You can read and/or write to these files to configure, monitor and control your Strato Pi.
+
+For instance, check if the watchdog is enabled:
+
+    cat /sys/class/stratopi/watchdog/enabled
+    
+Enable the watchdog:
+
+    echo 1 > /sys/class/stratopi/watchdog/enabled
 
 Files written in _italic_ are configuration parameters further detailed in the [Strato Pi Logic Controller Advanced Configuration Guide](https://www.sferalabs.cc/files/strato/doc/stratopi-logic-controller-advanced-configuration-guide.pdf).    
 Configuration parameters marked with * are not persistent, i.e. their values are reset to default after a power cycle. To change the default values use the `/mcu/config` file (see below).    
