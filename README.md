@@ -23,6 +23,10 @@ Reboot:
 
     sudo reboot
 
+After reboot, install git and the kernel headers:
+ 
+     sudo apt install git linux-headers-$(uname -r)
+
 Clone this repo:
 
     git clone --depth 1 --recursive https://github.com/sfera-labs/strato-pi-kernel-module.git
