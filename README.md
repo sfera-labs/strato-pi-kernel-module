@@ -23,37 +23,47 @@ Reboot:
 
     sudo reboot
 
-After reboot, install git and the kernel headers:
- 
-     sudo apt install git linux-headers-$(uname -r)
+After reboot, install required tools:
+
+    sudo apt install git device-tree-compiler dkms linux-headers-$(uname -r)
 
 Clone this repo:
 
-    git clone --depth 1 --recursive https://github.com/sfera-labs/strato-pi-kernel-module.git
-
-Make and install:
+    git clone --depth 1 https://github.com/sfera-labs/strato-pi-kernel-module.git
 
     cd strato-pi-kernel-module
+
+### Recommended installation mode: DKMS
+
+This is the recommended mode. It automatically rebuilds and reinstalls the module when new kernel versions are installed.
+
+Register, build and install with DKMS:
+
+    sudo dkms add .
+    sudo dkms build -m stratopi -v $(cat VERSION)
+    sudo dkms install -m stratopi -v $(cat VERSION)
+
+### Advanced installation mode: manual make install (running kernel only)
+
+Use this only if you specifically want to install for the current running kernel version only.
+
     make clean
     make
     sudo make install
-    
-Compile the Device Tree and install it:
 
-    dtc -@ -Hepapr -I dts -O dtb -o stratopi.dtbo stratopi.dts
-    sudo cp stratopi.dtbo /boot/overlays/
+Manual mode does not provide automatic rebuild on kernel upgrades.
 
-Add to `/boot/firmware/config.txt` (`/boot/config.txt` in older versions) the following line:
+### Enable overlay at boot
+
+Add to `/boot/firmware/config.txt` the following line:
 
     dtoverlay=stratopi
 
-Optionally, to access the sysfs interface without superuser privileges, create a new group "stratopi" and set it as the module owner group by adding an **udev** rule:
+### Optional non-root access to `/sys/class/stratopi`
+
+The install process places `99-stratopi.rules`, which sets owner group `stratopi` for sysfs entries. To access the sysfs interface without superuser privileges, create the group and add your user, e.g. for user "pi":
 
     sudo groupadd stratopi
-    sudo cp 99-stratopi.rules /etc/udev/rules.d/
-
-and add your user to the group, e.g., for user "pi":
-
     sudo usermod -a -G stratopi pi
 
 Reboot:
