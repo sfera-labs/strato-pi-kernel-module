@@ -23,7 +23,7 @@
 
 #include "commons/soft_uart/raspberry_soft_uart.h"
 #include "commons/atecc/atecc.h"
-#include "commons/commons.h"
+#include "commons/utils/utils.h"
 #include "commons/gpio/gpio.h"
 
 #define MODEL_BASE		1
