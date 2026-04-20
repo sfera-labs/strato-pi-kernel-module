@@ -21,10 +21,10 @@
 #include <linux/module.h>
 #include <linux/of.h>
 
-#include "soft_uart/raspberry_soft_uart.h"
-#include "atecc/atecc.h"
+#include "commons/soft_uart/raspberry_soft_uart.h"
+#include "commons/atecc/atecc.h"
 #include "commons/commons.h"
-#include "gpio/gpio.h"
+#include "commons/gpio/gpio.h"
 
 #define MODEL_BASE		1
 #define MODEL_UPS		2
@@ -48,7 +48,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sfera Labs - http://sferalabs.cc");
 MODULE_DESCRIPTION("Strato Pi driver module");
-MODULE_VERSION("1.23");
+MODULE_VERSION(STRATOPI_MODULE_VERSION);
 
 static int model_num = -1;
 module_param( model_num, int, S_IRUGO);

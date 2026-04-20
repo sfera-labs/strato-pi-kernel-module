@@ -1,3 +1,0 @@
-[submodule "soft_uart"]
-	path = soft_uart
-	url = https://github.com/sfera-labs/soft_uart

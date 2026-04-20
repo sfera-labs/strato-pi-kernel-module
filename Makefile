@@ -1,18 +1,7 @@
-obj-m += stratopi.o
+MODULE_MAIN_OBJ := module.o
+COMMON_MODULES := utils gpio atecc
+MODULE_EXTRA_OBJS := commons/soft_uart/raspberry_soft_uart.o commons/soft_uart/queue.o commons/commons.o
+UDEV_RULES := 99-stratopi.rules
 
-stratopi-objs := module.o
-stratopi-objs += soft_uart/raspberry_soft_uart.o
-stratopi-objs += soft_uart/queue.o
-stratopi-objs += atecc/atecc.o
-stratopi-objs += commons/commons.o
-stratopi-objs += gpio/gpio.o
-
-all:
-	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
-
-clean:
-	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) clean
-
-install:
-	sudo install -m 644 -c stratopi.ko /lib/modules/$(shell uname -r)
-	sudo depmod
+SOURCE_DIR := $(if $(src),$(src),$(CURDIR))
+include $(SOURCE_DIR)/commons/scripts/kmod-common.mk
