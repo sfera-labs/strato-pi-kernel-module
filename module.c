@@ -259,7 +259,8 @@ static bool mcuMutexLock(void) {
 	return false;
 }
 
-struct GpioBean* gpioGetBean(struct device *dev, struct device_attribute *attr) {
+struct GpioBean* gpioGetBean(struct device *dev, struct device_attribute *attr,
+                             const char **vals) {
 	if (dev == pBuzzerDevice) {
 		return &gpioBuzzer;
 	} else if (dev == pWatchdogDevice) {
