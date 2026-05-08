@@ -6,6 +6,9 @@ It gives access to all Strato Pi functionalities and configuration options via s
     
 Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with firmware version >= 4.0.
 
+[![Build tests [stable oldstable]](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-apt.yml/badge.svg)](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-apt.yml)
+[![Build tests [firmware]](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-fw.yml/badge.svg)](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-fw.yml)
+
 ## Compile and Install
 
 *For installation on Ubuntu [read this](https://github.com/sfera-labs/knowledge-base/blob/main/raspberrypi/kernel-modules-ubuntu.md).*
