@@ -1,0 +1,14 @@
+name: "Build tests [firmware]"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: sfera-labs/sl-kmod-commons/.github/workflows/kmod-build-git.yml@main
+    with:
+      sources: 'rpi-firmware'
+      streams: 'master,stable,next'
