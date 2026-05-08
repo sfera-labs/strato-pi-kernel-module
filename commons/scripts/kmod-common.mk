@@ -4,7 +4,7 @@ MODULE_VERSION := $(strip $(shell cat $(SOURCE_DIR)/VERSION))
 ifeq ($(strip $(MODULE_VERSION_DEFINE)),)
 MODULE_VERSION_DEFINE := $(shell echo "$(MODULE_NAME)" | tr '[:lower:]-' '[:upper:]_')_MODULE_VERSION
 endif
-DTS_NAME ?= $(strip $(shell cat $(SOURCE_DIR)/DTS_NAME))
+DTS_NAME ?= $(strip $(if $(wildcard $(SOURCE_DIR)/DTS_NAME),$(shell cat $(SOURCE_DIR)/DTS_NAME),))
 ifeq ($(strip $(DTS_NAME)),)
 DTS_NAME := $(MODULE_NAME)
 endif
