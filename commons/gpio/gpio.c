@@ -1,6 +1,7 @@
 #include "gpio.h"
 
 #include <linux/delay.h>
+#include <linux/hrtimer.h>
 #include <linux/interrupt.h>
 
 #include "../utils/utils.h"
@@ -128,8 +129,13 @@ int gpioInitDebounce(struct DebouncedGpioBean *d) {
   d->onCnt = 0;
   d->offCnt = 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+  hrtimer_setup(&d->timer, debounceTimerHandler, CLOCK_MONOTONIC,
+                HRTIMER_MODE_REL);
+#else
   hrtimer_init(&d->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
   d->timer.function = &debounceTimerHandler;
+#endif
 
   d->irq = gpiod_to_irq(d->gpio.desc);
   res = request_irq(d->irq, debounceIrqHandler,
@@ -148,7 +154,7 @@ int gpioInitDebounce(struct DebouncedGpioBean *d) {
 void gpioFree(struct GpioBean *g) {
   if (g->desc != NULL && !IS_ERR(g->desc)) {
     gpiod_put(g->desc);
-	g->desc = NULL;
+    g->desc = NULL;
   }
 }
 
