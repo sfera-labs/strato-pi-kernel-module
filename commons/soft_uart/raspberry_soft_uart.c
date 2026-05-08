@@ -42,12 +42,20 @@ int raspberry_soft_uart_init(struct gpio_desc *_gpio_tx, struct gpio_desc *_gpio
   mutex_init(&current_tty_mutex);
   
   // Initializes the TX timer.
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+  hrtimer_setup(&timer_tx, handle_tx, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+#else
   hrtimer_init(&timer_tx, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
   timer_tx.function = &handle_tx;
+#endif
   
   // Initializes the RX timer.
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+  hrtimer_setup(&timer_rx, handle_rx, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+#else
   hrtimer_init(&timer_rx, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
   timer_rx.function = &handle_rx;
+#endif
   
   // Initializes the GPIO pins.
   gpio_tx = _gpio_tx;
