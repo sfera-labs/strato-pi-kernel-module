@@ -1,10 +1,8 @@
 # Strato Pi driver kernel module
 
 Raspberry Pi OS (Debian) Kernel module for [Strato Pi](https://www.sferalabs.cc/strato-pi/).
-
-It gives access to all Strato Pi functionalities and configuration options via sysfs virtual files.
     
-Requires Strato Pi CM with firmware version >= 3.5 or any other Strato Pi with firmware version >= 4.0.
+Compatible with Strato Pi CM (Duo) with firmware version &ge; 3.5 or Strato Pi Base, UPS, or CAN with firmware version &ge; 4.0.
 
 [![Build tests [stable oldstable]](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-apt.yml/badge.svg)](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-apt.yml)
 [![Build tests [firmware]](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-fw.yml/badge.svg)](https://github.com/sfera-labs/strato-pi-kernel-module/actions/workflows/build-fw.yml)
