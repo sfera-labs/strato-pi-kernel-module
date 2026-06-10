@@ -18,6 +18,7 @@ ccflags-y += -D$(MODULE_VERSION_DEFINE)=\"$(MODULE_VERSION)\"
 
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KDIR ?= /lib/modules/$(KVER)/build
+OVERLAY_DIR ?= $(shell [ -d /boot/overlays ] && echo /boot/overlays || echo /boot/firmware/overlays)
 
 all: dtbo
 	make -C $(KDIR) M=$(PWD) modules
@@ -35,7 +36,7 @@ install:
 	sudo $(MAKE) install-extra
 
 install-extra: dtbo
-	install -D -m 644 -c $(MODULE_NAME).dtbo /boot/overlays/$(MODULE_NAME).dtbo
+	install -D -m 644 -c $(MODULE_NAME).dtbo $(OVERLAY_DIR)/$(MODULE_NAME).dtbo
 	@if [ -n "$(strip $(UDEV_RULES))" ]; then \
 		for rule in $(UDEV_RULES); do \
 			install -D -m 644 -c $$rule /etc/udev/rules.d/$$rule; \
@@ -45,7 +46,7 @@ install-extra: dtbo
 	udevadm trigger || true
 
 uninstall-extra:
-	rm -f /boot/overlays/$(MODULE_NAME).dtbo
+	rm -f $(OVERLAY_DIR)/$(MODULE_NAME).dtbo
 	@if [ -n "$(strip $(UDEV_RULES))" ]; then \
 		for rule in $(UDEV_RULES); do \
 			rm -f /etc/udev/rules.d/$$rule; \
