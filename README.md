@@ -41,8 +41,8 @@ This is the recommended mode. It automatically rebuilds and reinstalls the modul
 Register, build and install with DKMS:
 
     sudo dkms add .
-    sudo dkms build -m stratopi -v $(cat VERSION)
-    sudo dkms install -m stratopi -v $(cat VERSION)
+    sudo dkms build -m $(cat MODULE_NAME) -v $(cat VERSION)
+    sudo dkms install -m $(cat MODULE_NAME) -v $(cat VERSION)
 
 
 ### Alternative installation mode: manual install for running kernel only
