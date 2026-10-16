@@ -1,0 +1,38 @@
+#!/bin/sh
+# .deb counterpart of the Make DKMS install path in kmod-common.mk; runs before dh_dkms builds the module.
+set -e
+cd /
+
+case "$1" in
+	install|upgrade)
+		# Converse of check-dkms-unmanaged: on install the package is not dpkg-managed yet, so any existing registration is manual.
+		if [ "$1" = install ] \
+			&& command -v dkms >/dev/null 2>&1 \
+			&& dkms status -m "@MODULE_NAME@" 2>/dev/null | grep -q .; then
+			echo "@MODULE_NAME@ has a DKMS registration that is not dpkg-managed; remove it first with 'sudo dkms remove -m @MODULE_NAME@ -v <version> --all' (see 'dkms status -m @MODULE_NAME@')" >&2
+			exit 1
+		fi
+		# Same as cleanup-module-files, for every kernel with headers (the ones install-flavors.sh and dh_dkms build for).
+		for kernel_dir in /lib/modules/*; do
+			[ -d "$kernel_dir/build" ] || continue
+			module_files="$(find "$kernel_dir" \( -type f -o -type l \) -name '@MODULE_NAME@.ko*' -print)"
+			# Check every owner before deleting anything, as cleanup-module-files does.
+			for module_file in $module_files; do
+				if module_owner="$(dpkg-query -S "$module_file" 2>/dev/null)"; then
+					module_package="${module_owner%: *}"
+					echo "Package $module_package owns $module_file; remove it first with 'sudo apt remove $module_package'" >&2
+					exit 1
+				fi
+			done
+			for module_file in $module_files; do
+				rm -f "$module_file"
+			done
+			# Refresh the module index only when something was removed, as in cleanup-module-files.
+			if [ -n "$module_files" ]; then
+				depmod "${kernel_dir##*/}"
+			fi
+		done
+		;;
+esac
+
+exit 0

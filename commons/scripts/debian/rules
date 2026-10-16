@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+MODULE_NAME := $(shell cat MODULE_NAME)
+MODULE_VERSION := $(shell cat VERSION)
+PACKAGE_NAME := $(MODULE_NAME)-dkms
+DESTDIR_SRC := debian/$(PACKAGE_NAME)/usr/src/$(MODULE_NAME)-$(MODULE_VERSION)
+
+%:
+	dh $@ --with dkms
+
+override_dh_dkms:
+	dh_dkms -V
+
+# The module is compiled by dkms on the target at postinst time, not here.
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_clean:
+
+override_dh_auto_install:
+	mkdir -p $(DESTDIR_SRC)
+	find . -mindepth 1 -maxdepth 1 ! -name debian ! -name dkms.conf -exec cp -a {} $(DESTDIR_SRC)/ \;
