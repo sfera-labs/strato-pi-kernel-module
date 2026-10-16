@@ -1,0 +1,22 @@
+name: Build and publish deb package
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing tag to build and release, e.g. v1.35 (must match v<VERSION>)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: sfera-labs/sl-kmod-commons/.github/workflows/kmod-build-deb.yml@main
+    permissions:
+      contents: write
+    with:
+      source_ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
