@@ -14,9 +14,9 @@ if command -v dkms >/dev/null 2>&1; then
 	THIS_VERSION_COUNT="$(dkms status 2>/dev/null | grep -Ec "^${MODULE_NAME}/${CURRENT_VERSION}," || true)"
 
 	if [ "$OTHER_VERSIONS_COUNT" -gt "$THIS_VERSION_COUNT" ]; then
-		echo "Skipping uninstall-extra: another ${MODULE_NAME} DKMS version is present"
+		echo "Skipping uninstall-assets: another ${MODULE_NAME} DKMS version is present"
 		exit 0
 	fi
 fi
 
-make uninstall-extra
+make uninstall-assets

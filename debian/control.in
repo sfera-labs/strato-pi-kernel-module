@@ -1,0 +1,18 @@
+Source: @PACKAGE_NAME@
+Section: kernel
+Priority: optional
+Maintainer: @DEB_MAINTAINER@
+Homepage: @DEB_HOMEPAGE@
+Vcs-Git: @VCS_GIT_URL@
+Build-Depends: debhelper-compat (= 13), dh-dkms | dkms
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: @PACKAGE_NAME@
+Architecture: all
+Depends: dkms (>= 2.1.0.0), device-tree-compiler, ${misc:Depends}
+Recommends: raspberrypi-kernel-headers
+Description: DKMS kernel module for @MODULE_NAME@
+ This package provides the source and DKMS configuration for @MODULE_NAME@.
+ DKMS builds the module locally for kernels with installed headers.
+ Device-tree overlays and udev rules are installed by the DKMS hooks.
