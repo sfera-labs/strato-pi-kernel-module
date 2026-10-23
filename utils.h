@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef _SL_UTILS_H
 #define _SL_UTILS_H
 
