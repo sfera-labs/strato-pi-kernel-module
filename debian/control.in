@@ -11,7 +11,7 @@ Rules-Requires-Root: no
 Package: @PACKAGE_NAME@
 Architecture: all
 Depends: dkms (>= 2.1.0.0), device-tree-compiler, ${misc:Depends}
-Recommends: linux-headers-raspi, linux-headers-rpi-2712, linux-headers-rpi-v8, linux-headers-rpi-v7, linux-headers-rpi-v7l, linux-headers-rpi-v6
+Recommends: linux-headers-raspi
 Description: DKMS kernel module for @MODULE_NAME@
  This package provides the source and DKMS configuration for @MODULE_NAME@.
  DKMS builds the module locally for kernels with installed headers.
