@@ -1,16 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-only
 /*
- * stratopi
- *
- *     Copyright (C) 2019-2025 Sfera Labs S.r.l.
- *
- *     For information, see the Strato Pi web site:
- *     https://www.sferalabs.cc/strato-pi
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * LICENSE.txt file for more details.
- *
+ * Strato Pi kernel module
+ * Copyright (C) 2019-2026 Sfera Labs S.r.l.
  */
 
 #include <linux/delay.h>

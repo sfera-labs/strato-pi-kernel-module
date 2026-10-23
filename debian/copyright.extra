@@ -1,0 +1,9 @@
+Files: commons/soft_uart/*
+Copyright: UNKNOWN
+License: GPL-3.0-only
+ This component is distributed under the terms of version 3 only of the GNU General Public License.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in /usr/share/common-licenses/GPL-3.
+Comment: Derived from https://github.com/adrianomarto/soft_uart.
+ Copyright holder is not explicitly identified in the source.
