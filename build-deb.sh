@@ -57,12 +57,17 @@ SRC_DIR="$STAGE_DIR/${PACKAGE_NAME}_${MODULE_VERSION}"
 mkdir -p "$SRC_DIR"
 
 # Stage source without development and generated files.
-rsync -a \
-	--exclude='.*' \
-	--exclude='_DEV' \
-	--exclude='dist' \
-	--exclude='*.md' \
-	"$MODULE_REPO"/ "$SRC_DIR"/
+rsync_args=(
+	--exclude='.*'
+	--exclude='_DEV'
+	--exclude='dist'
+	--exclude='*.md'
+	--exclude='/debian/'
+)
+if [ -f "$MODULE_REPO/debian/package.exclude" ]; then
+	rsync_args+=(--exclude-from="$MODULE_REPO/debian/package.exclude")
+fi
+rsync -a "${rsync_args[@]}" "$MODULE_REPO"/ "$SRC_DIR"/
 
 mkdir -p "$SRC_DIR/debian"
 
@@ -73,7 +78,6 @@ sed \
 	-e "s|@DEB_HOMEPAGE@|${DEB_HOMEPAGE}|g" \
 	-e "s|@VCS_GIT_URL@|${VCS_GIT_URL}|g" \
 	"$SCRIPT_DIR/debian/control.in" > "$SRC_DIR/debian/control"
-
 
 if [ -z "$VCS_GIT_URL" ]; then
 	sed '/^Vcs-Git: $/d' "$SRC_DIR/debian/control" > "$SRC_DIR/debian/control.tmp"
